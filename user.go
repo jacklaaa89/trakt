@@ -24,7 +24,7 @@ type UserImages struct {
 }
 
 type User struct {
-	IDs `json:"ids"`
+	baseIDs `json:"ids"`
 
 	Username string      `json:"username"`
 	Name     string      `json:"name"`

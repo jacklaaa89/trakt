@@ -6,27 +6,15 @@ import (
 	"github.com/jackaaa89/trakt"
 )
 
-// Lists
-// People
-
-type Client struct {
-	B   trakt.Backend
-	Key string
-}
+type Client struct{ b *trakt.BaseClient }
 
 func Trending(params *trakt.ExtendedListParams) *trakt.TrendingMovieIterator {
 	return getC().Trending(params)
 }
 
 func (c *Client) Trending(params *trakt.ExtendedListParams) *trakt.TrendingMovieIterator {
-	return &trakt.TrendingMovieIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			tml := make([]*trakt.TrendingMovie, 0)
-			f := trakt.NewEmptyFrame(&tml)
-			err := c.B.CallWithFrame(http.MethodGet, "/movies/trending", c.Key, p, f)
-			return f, err
-		}),
-	}
+	tml := make([]*trakt.TrendingMovie, 0)
+	return &trakt.TrendingMovieIterator{Iterator: c.b.NewIterator(http.MethodGet, "/movies/trending", params, &tml)}
 }
 
 func Popular(params *trakt.ExtendedListParams) *trakt.MovieIterator {
@@ -34,14 +22,8 @@ func Popular(params *trakt.ExtendedListParams) *trakt.MovieIterator {
 }
 
 func (c *Client) Popular(params *trakt.ExtendedListParams) *trakt.MovieIterator {
-	return &trakt.MovieIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.Movie, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			err := c.B.CallWithFrame(http.MethodGet, "/movies/popular", c.Key, p, f)
-			return f, err
-		}),
-	}
+	rcv := make([]*trakt.Movie, 0)
+	return &trakt.MovieIterator{Iterator: c.b.NewIterator(http.MethodGet, "/movies/popular", params, &rcv)}
 }
 
 func Played(params *trakt.TimePeriodListParams) *trakt.MovieWithStatisticsIterator {
@@ -49,7 +31,7 @@ func Played(params *trakt.TimePeriodListParams) *trakt.MovieWithStatisticsIterat
 }
 
 func (c *Client) Played(params *trakt.TimePeriodListParams) *trakt.MovieWithStatisticsIterator {
-	return c.generateTimePeriodMovieListIterator("played", params)
+	return c.newTimePeriodIterator("played", params)
 }
 
 func Watched(params *trakt.TimePeriodListParams) *trakt.MovieWithStatisticsIterator {
@@ -57,7 +39,7 @@ func Watched(params *trakt.TimePeriodListParams) *trakt.MovieWithStatisticsItera
 }
 
 func (c *Client) Watched(params *trakt.TimePeriodListParams) *trakt.MovieWithStatisticsIterator {
-	return c.generateTimePeriodMovieListIterator("watched", params)
+	return c.newTimePeriodIterator("watched", params)
 }
 
 func Collected(params *trakt.TimePeriodListParams) *trakt.MovieWithStatisticsIterator {
@@ -65,7 +47,7 @@ func Collected(params *trakt.TimePeriodListParams) *trakt.MovieWithStatisticsIte
 }
 
 func (c *Client) Collected(params *trakt.TimePeriodListParams) *trakt.MovieWithStatisticsIterator {
-	return c.generateTimePeriodMovieListIterator("collected", params)
+	return c.newTimePeriodIterator("collected", params)
 }
 
 func Anticipated(params *trakt.ExtendedListParams) *trakt.AnticipatedMovieIterator {
@@ -73,14 +55,8 @@ func Anticipated(params *trakt.ExtendedListParams) *trakt.AnticipatedMovieIterat
 }
 
 func (c *Client) Anticipated(params *trakt.ExtendedListParams) *trakt.AnticipatedMovieIterator {
-	return &trakt.AnticipatedMovieIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.AnticipatedMovie, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			err := c.B.CallWithFrame(http.MethodGet, "/movies/anticipated", c.Key, p, f)
-			return f, err
-		}),
-	}
+	rcv := make([]*trakt.AnticipatedMovie, 0)
+	return &trakt.AnticipatedMovieIterator{Iterator: c.b.NewIterator(http.MethodGet, "/movies/anticipated", params, &rcv)}
 }
 
 func BoxOffice(params *trakt.BoxOfficeListParams) *trakt.BoxOfficeMovieIterator {
@@ -88,13 +64,9 @@ func BoxOffice(params *trakt.BoxOfficeListParams) *trakt.BoxOfficeMovieIterator 
 }
 
 func (c *Client) BoxOffice(params *trakt.BoxOfficeListParams) *trakt.BoxOfficeMovieIterator {
+	rcv := make([]*trakt.BoxOfficeMovie, 0)
 	return &trakt.BoxOfficeMovieIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.BoxOfficeMovie, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			err := c.B.CallWithFrame(http.MethodGet, "/movies/boxoffice", c.Key, p, f)
-			return f, err
-		}),
+		Iterator: c.b.NewSimulatedIterator(http.MethodGet, "/movies/boxoffice", params, &rcv),
 	}
 }
 
@@ -103,21 +75,9 @@ func RecentlyUpdated(params *trakt.RecentlyUpdatedListParams) *trakt.RecentlyUpd
 }
 
 func (c *Client) RecentlyUpdated(params *trakt.RecentlyUpdatedListParams) *trakt.RecentlyUpdatedMovieIterator {
-	return &trakt.RecentlyUpdatedMovieIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.RecentlyUpdatedMovie, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			err := c.B.CallWithFrame(
-				http.MethodGet,
-				trakt.FormatURLPath(
-					"/movies/updates/%s",
-					params.StartDate.Format(`2006-01-02`),
-				),
-				c.Key, p, f,
-			)
-			return f, err
-		}),
-	}
+	rcv := make([]*trakt.RecentlyUpdatedMovie, 0)
+	path := trakt.FormatURLPath("/movies/updates/%s", params.StartDate.Format(`2006-01-02`))
+	return &trakt.RecentlyUpdatedMovieIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
 }
 
 func Get(id trakt.SearchID, params *trakt.ExtendedParams) (*trakt.Movie, error) {
@@ -127,7 +87,7 @@ func Get(id trakt.SearchID, params *trakt.ExtendedParams) (*trakt.Movie, error) 
 func (c *Client) Get(id trakt.SearchID, params *trakt.ExtendedParams) (*trakt.Movie, error) {
 	path := trakt.FormatURLPath("/movies/%s", id)
 	mov := &trakt.Movie{}
-	err := c.B.Call(http.MethodGet, path, c.Key, params, mov)
+	err := c.b.Call(http.MethodGet, path, params, mov)
 	return mov, err
 }
 
@@ -136,15 +96,9 @@ func Aliases(id trakt.SearchID, params *trakt.BasicParams) *trakt.AliasIterator 
 }
 
 func (c *Client) Aliases(id trakt.SearchID, params *trakt.BasicParams) *trakt.AliasIterator {
-	return &trakt.AliasIterator{
-		Iterator: trakt.NewSimulatedIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.Alias, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			path := trakt.FormatURLPath("movies/%s/aliases", id)
-			err := c.B.CallWithFrame(http.MethodGet, path, c.Key, p, f)
-			return f, err
-		}),
-	}
+	rcv := make([]*trakt.Alias, 0)
+	path := trakt.FormatURLPath("movies/%s/aliases", id)
+	return &trakt.AliasIterator{Iterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
 }
 
 func Releases(id trakt.SearchID, params *trakt.ReleaseListParams) *trakt.ReleaseIterator {
@@ -152,15 +106,9 @@ func Releases(id trakt.SearchID, params *trakt.ReleaseListParams) *trakt.Release
 }
 
 func (c *Client) Releases(id trakt.SearchID, params *trakt.ReleaseListParams) *trakt.ReleaseIterator {
-	return &trakt.ReleaseIterator{
-		Iterator: trakt.NewSimulatedIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.Release, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			path := trakt.FormatURLPath("movies/%s/releases/%s", id, params.Country)
-			err := c.B.CallWithFrame(http.MethodGet, path, c.Key, p, f)
-			return f, err
-		}),
-	}
+	rcv := make([]*trakt.Release, 0)
+	path := trakt.FormatURLPath("movies/%s/releases/%s", id, params.Country)
+	return &trakt.ReleaseIterator{Iterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
 }
 
 func Translations(id trakt.SearchID, params *trakt.TranslationListParams) *trakt.TranslationIterator {
@@ -168,15 +116,9 @@ func Translations(id trakt.SearchID, params *trakt.TranslationListParams) *trakt
 }
 
 func (c *Client) Translations(id trakt.SearchID, params *trakt.TranslationListParams) *trakt.TranslationIterator {
-	return &trakt.TranslationIterator{
-		Iterator: trakt.NewSimulatedIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.Translation, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			path := trakt.FormatURLPath("movies/%s/translations/%s", id, params.Language)
-			err := c.B.CallWithFrame(http.MethodGet, path, c.Key, p, f)
-			return f, err
-		}),
-	}
+	rcv := make([]*trakt.Translation, 0)
+	path := trakt.FormatURLPath("movies/%s/translations/%s", id, params.Language)
+	return &trakt.TranslationIterator{Iterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
 }
 
 func Comments(id trakt.SearchID, params *trakt.CommentListParams) *trakt.CommentIterator {
@@ -184,15 +126,9 @@ func Comments(id trakt.SearchID, params *trakt.CommentListParams) *trakt.Comment
 }
 
 func (c *Client) Comments(id trakt.SearchID, params *trakt.CommentListParams) *trakt.CommentIterator {
-	return &trakt.CommentIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.Comment, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			path := trakt.FormatURLPath("movies/%s/comments/%s", id, params.Sort)
-			err := c.B.CallWithFrame(http.MethodGet, path, c.Key, p, f)
-			return f, err
-		}),
-	}
+	rcv := make([]*trakt.Comment, 0)
+	path := trakt.FormatURLPath("movies/%s/comments/%s", id, params.Sort)
+	return &trakt.CommentIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
 }
 
 func WatchingNow(id trakt.SearchID, params *trakt.BasicListParams) *trakt.UserIterator {
@@ -200,15 +136,9 @@ func WatchingNow(id trakt.SearchID, params *trakt.BasicListParams) *trakt.UserIt
 }
 
 func (c *Client) WatchingNow(id trakt.SearchID, params *trakt.BasicListParams) *trakt.UserIterator {
-	return &trakt.UserIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.User, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			path := trakt.FormatURLPath("movies/%s/watching", id)
-			err := c.B.CallWithFrame(http.MethodGet, path, c.Key, p, f)
-			return f, err
-		}),
-	}
+	rcv := make([]*trakt.User, 0)
+	path := trakt.FormatURLPath("movies/%s/watching", id)
+	return &trakt.UserIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
 }
 
 func Related(id trakt.SearchID, params *trakt.ExtendedListParams) *trakt.MovieIterator {
@@ -216,15 +146,9 @@ func Related(id trakt.SearchID, params *trakt.ExtendedListParams) *trakt.MovieIt
 }
 
 func (c *Client) Related(id trakt.SearchID, params *trakt.ExtendedListParams) *trakt.MovieIterator {
-	return &trakt.MovieIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.Movie, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			path := trakt.FormatURLPath("movies/%s/related", id)
-			err := c.B.CallWithFrame(http.MethodGet, path, c.Key, p, f)
-			return f, err
-		}),
-	}
+	rcv := make([]*trakt.Movie, 0)
+	path := trakt.FormatURLPath("movies/%s/related", id)
+	return &trakt.MovieIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
 }
 
 func Ratings(id trakt.SearchID, params *trakt.BasicParams) (*trakt.Rating, error) {
@@ -234,7 +158,7 @@ func Ratings(id trakt.SearchID, params *trakt.BasicParams) (*trakt.Rating, error
 func (c *Client) Ratings(id trakt.SearchID, params *trakt.BasicParams) (*trakt.Rating, error) {
 	path := trakt.FormatURLPath("/movies/%s/ratings", id)
 	stats := &trakt.Rating{}
-	err := c.B.Call(http.MethodGet, path, c.Key, params, stats)
+	err := c.b.Call(http.MethodGet, path, params, stats)
 	return stats, err
 }
 
@@ -245,32 +169,39 @@ func Statistics(id trakt.SearchID, params *trakt.BasicParams) (*trakt.Statistics
 func (c *Client) Statistics(id trakt.SearchID, params *trakt.BasicParams) (*trakt.Statistics, error) {
 	path := trakt.FormatURLPath("/movies/%s/stats", id)
 	stats := &trakt.Statistics{}
-	err := c.B.Call(http.MethodGet, path, c.Key, params, stats)
+	err := c.b.Call(http.MethodGet, path, params, stats)
 	return stats, err
 }
 
-func (c *Client) generateTimePeriodMovieListIterator(
-	action string, params *trakt.TimePeriodListParams,
-) *trakt.MovieWithStatisticsIterator {
-	return &trakt.MovieWithStatisticsIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.MovieWithStatistics, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			var period = trakt.TimePeriodAll
-			if params.Period != "" {
-				period = params.Period
-			}
+func Lists(id trakt.SearchID, params *trakt.GetListParams) *trakt.ListIterator {
+	return getC().Lists(id, params)
+}
 
-			err := c.B.CallWithFrame(
-				http.MethodGet,
-				trakt.FormatURLPath("/movies/%s/%s", action, string(period)),
-				c.Key, p, f,
-			)
-			return f, err
-		}),
+func (c *Client) Lists(id trakt.SearchID, params *trakt.GetListParams) *trakt.ListIterator {
+	rcv := make([]*trakt.List, 0)
+	path := trakt.FormatURLPath("movies/%s/lists/%s/%s", id, params.ListType, params.SortType)
+	return &trakt.ListIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+}
+
+func People(id trakt.SearchID, params *trakt.ExtendedParams) (*trakt.CastAndCrew, error) {
+	return getC().People(id, params)
+}
+
+func (c *Client) People(id trakt.SearchID, params *trakt.ExtendedParams) (*trakt.CastAndCrew, error) {
+	path := trakt.FormatURLPath("/movies/%s/people", id)
+	cc := &trakt.CastAndCrew{}
+	err := c.b.Call(http.MethodGet, path, params, cc)
+	return cc, err
+}
+
+func (c *Client) newTimePeriodIterator(action string, p *trakt.TimePeriodListParams) *trakt.MovieWithStatisticsIterator {
+	var period = trakt.TimePeriodAll
+	if p.Period != "" {
+		period = p.Period
 	}
+	rcv := make([]*trakt.MovieWithStatistics, 0)
+	path := trakt.FormatURLPath("/movies/%s/%s", action, period)
+	return &trakt.MovieWithStatisticsIterator{Iterator: c.b.NewIterator(http.MethodGet, path, p, &rcv)}
 }
 
-func getC() *Client {
-	return &Client{B: trakt.GetBackend(), Key: trakt.Key}
-}
+func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

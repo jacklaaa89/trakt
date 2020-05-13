@@ -25,14 +25,60 @@ const (
 	OAuthURL   string = "https://trakt.tv"
 )
 
+type iteratorFunc func(ListParamsContainer, Query) Iterator
+
 // Key is the Stripe API key used globally in the binding.
 var Key string
+
+// NewClient generates a new client which all other clients should inherit from.
+func NewClient(b Backend) *BaseClient { return &BaseClient{B: b, Key: Key} }
+
+// BaseClient a base client which gives us default functionality to parent client implementations.
+type BaseClient struct {
+	// B the backend to query, this is an interface by design
+	// it allows us to override the underlined HTTP backend for tests etc
+	B Backend
+	// Key the API (client_id) to use in requests, this is inherited from the var Key
+	Key string
+}
+
+// newIterator helper function which performs all of the boilerplate code to generate an
+// iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
+// for each frame, rather than allocate a new rcv for each frame processed.
+func (b *BaseClient) NewIterator(method, path string, p ListParamsContainer, rcv interface{}) Iterator {
+	return b.newIteratorWithReceiver(newIterator, method, path, p, rcv)
+}
+
+// newIterator helper function which performs all of the boilerplate code to generate an
+// iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
+// for each frame, rather than allocate a new rcv for each frame processed.
+func (b *BaseClient) NewSimulatedIterator(method, path string, p ListParamsContainer, rcv interface{}) Iterator {
+	return b.newIteratorWithReceiver(newSimulatedIterator, method, path, p, rcv)
+}
+
+// newIteratorWithReceiver helper function which performs all of the boilerplate code to generate an
+// iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
+// for each frame, rather than allocate a new rcv for each frame processed.
+func (b *BaseClient) newIteratorWithReceiver(
+	generator iteratorFunc, method, path string, p ListParamsContainer, rcv interface{},
+) Iterator {
+	return generator(p, func(i ListParamsContainer) (iterationFrame, error) {
+		f := newEmptyFrame(rcv)
+		err := b.B.CallWithFrame(method, path, b.Key, i, f)
+		return f, err
+	})
+}
+
+// Call helper function function which calls the underlined backend providing the assigned key.
+func (b *BaseClient) Call(method, path string, params ParamsContainer, v interface{}) error {
+	return b.B.Call(method, path, b.Key, params, v)
+}
 
 // Backend is an interface for making calls against a Stripe service.
 // This interface exists to enable mocking for during testing if needed.
 type Backend interface {
 	Call(method, path, key string, params ParamsContainer, v interface{}) error
-	CallWithFrame(method, path, key string, params ParamsContainer, v IterationFrame) error
+	CallWithFrame(method, path, key string, params ParamsContainer, v iterationFrame) error
 	SetMaxNetworkRetries(maxNetworkRetries int)
 }
 
@@ -86,7 +132,7 @@ type BackendImplementation struct {
 
 // CallWithFrame called for pagination type functions where we are typically querying for a single frame / segment
 // in the entire set. This puts a higher level of abstraction above that of the basic Call function.
-func (s *BackendImplementation) CallWithFrame(method, path, key string, params ParamsContainer, v IterationFrame) error {
+func (s *BackendImplementation) CallWithFrame(method, path, key string, params ParamsContainer, v iterationFrame) error {
 	if v == nil {
 		return errors.New(`frame data is required`)
 	}
@@ -399,8 +445,8 @@ func (s *BackendImplementation) sleepTime(numRetries int) time.Duration {
 	return delay
 }
 
-// Backends are the currently supported endpoints.
-type Backends struct {
+// backends are the currently supported endpoints.
+type backends struct {
 	API Backend
 	mu  sync.RWMutex
 }
@@ -491,9 +537,9 @@ func FormatURLPath(format string, params ...interface{}) string {
 func GetBackend() Backend {
 	var backend Backend
 
-	backends.mu.RLock()
-	backend = backends.API
-	backends.mu.RUnlock()
+	backendList.mu.RLock()
+	backend = backendList.API
+	backendList.mu.RUnlock()
 
 	if backend != nil {
 		return backend
@@ -508,7 +554,7 @@ func GetBackend() Backend {
 		},
 	)
 
-	SetBackend(backend)
+	setBackend(backend)
 
 	return backend
 }
@@ -557,11 +603,11 @@ func Int64Slice(v []int64) []*int64 {
 	return out
 }
 
-// SetBackend sets the backend used in the binding.
-func SetBackend(b Backend) {
-	backends.mu.Lock()
-	defer backends.mu.Unlock()
-	backends.API = b
+// setBackend sets the backend used in the binding.
+func setBackend(b Backend) {
+	backendList.mu.Lock()
+	defer backendList.mu.Unlock()
+	backendList.API = b
 }
 
 // SetHTTPClient overrides the default HTTP client.
@@ -625,7 +671,7 @@ type headerUnmarshaller interface {
 	UnmarshalHeaders(h http.Header) error
 }
 
-var backends Backends
+var backendList backends
 var encodedUserAgent string
 
 // The default HTTP client used for communication with any of Stripe's

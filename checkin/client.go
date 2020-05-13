@@ -1,24 +1,26 @@
 package checkin
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/jackaaa89/trakt"
 )
 
-type Client struct {
-	B   trakt.Backend
-	Key string
-}
+type Client struct{ b *trakt.BaseClient }
 
 func Start(params *trakt.StartCheckinParams) (*trakt.Checkin, error) {
 	return getC().Start(params)
 }
 
 func (c *Client) Start(params *trakt.StartCheckinParams) (*trakt.Checkin, error) {
+	if params == nil {
+		return nil, errors.New(`params cannot be nil`)
+	}
+
 	ci := &trakt.Checkin{}
 	p := &wrappedCheckinParams{*params}
-	err := c.B.Call(http.MethodPost, "/checkin", c.Key, p, ci)
+	err := c.b.Call(http.MethodPost, "/checkin", p, ci)
 	return ci, err
 }
 
@@ -27,7 +29,7 @@ func Stop(params *trakt.Params) error {
 }
 
 func (c *Client) Stop(params *trakt.Params) error {
-	return c.B.Call(http.MethodDelete, "/checkin", c.Key, params, nil)
+	return c.b.Call(http.MethodDelete, "/checkin", params, nil)
 }
 
 type wrappedCheckinParams struct {
@@ -42,4 +44,4 @@ func (wrappedCheckinParams) Code(statusCode int) trakt.ErrorCode {
 	return trakt.DefaultErrorHandler.Code(statusCode)
 }
 
-func getC() *Client { return &Client{trakt.GetBackend(), trakt.Key} }
+func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

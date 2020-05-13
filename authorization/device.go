@@ -8,13 +8,10 @@ import (
 	"github.com/jackaaa89/trakt"
 )
 
-type Client struct {
-	B   trakt.Backend
-	Key string
-}
+type Client struct{ b *trakt.BaseClient }
 
 type newDeviceCodeParams struct {
-	trakt.BasicParams
+	*trakt.BasicParams
 	ClientID string `json:"client_id" url:"-"`
 }
 
@@ -24,13 +21,13 @@ func NewCode(params *trakt.BasicParams) (*trakt.DeviceCode, error) {
 
 func (c *Client) NewCode(params *trakt.BasicParams) (*trakt.DeviceCode, error) {
 	d := &trakt.DeviceCode{}
-	p := &newDeviceCodeParams{*params, c.Key}
-	err := c.B.Call(http.MethodPost, "/oauth/device/code", c.Key, p, &d)
+	p := &newDeviceCodeParams{params, c.b.Key}
+	err := c.b.Call(http.MethodPost, "/oauth/device/code", p, &d)
 	return d, err
 }
 
 type wrappedPollCodeParams struct {
-	trakt.PollCodeParams
+	*trakt.PollCodeParams
 	ClientID string `json:"client_id" url:"-"`
 }
 
@@ -135,8 +132,8 @@ func (c *Client) PollAsync(params *trakt.PollCodeParams) <-chan *trakt.PollResul
 
 func (c *Client) poll(params *trakt.PollCodeParams) (*trakt.Token, error) {
 	t := &trakt.Token{}
-	p := &wrappedPollCodeParams{*params, c.Key}
-	err := c.B.Call(http.MethodPost, "/oauth/device/token", c.Key, p, t)
+	p := &wrappedPollCodeParams{params, c.b.Key}
+	err := c.b.Call(http.MethodPost, "/oauth/device/token", p, t)
 	return t, err
 }
 
@@ -152,9 +149,4 @@ func withContext(ctx context.Context, w *trakt.PollCodeParams) *trakt.PollCodePa
 // continue polling.
 func canContinuePolling(e trakt.ErrorCode) bool { return e == trakt.ErrorCodePendingDeviceCode }
 
-func getC() *Client {
-	return &Client{
-		B:   trakt.GetBackend(),
-		Key: trakt.Key,
-	}
-}
+func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

@@ -34,36 +34,52 @@ type ExtendedListParams struct {
 	Extended ExtendedType `url:"extended"`
 }
 
-type SearchID interface{ id() string }
+type SearchID interface {
+	id() string
+	path() string
+}
 
 type ID int64
 
-func (i ID) id() string { return strconv.Itoa(int(i)) }
-
-type IMDB string
-
-func (i IMDB) id() string { return string(i) }
+func (i ID) id() string   { return strconv.Itoa(int(i)) }
+func (i ID) path() string { return "trakt" }
 
 type Slug string
 
-func (s Slug) id() string { return string(s) }
+func (s Slug) id() string   { return string(s) }
+func (s Slug) path() string { return "trakt" }
 
-type IDs struct {
+type IMDB string
+
+func (i IMDB) id() string   { return string(i) }
+func (i IMDB) path() string { return "imdb" }
+
+type TVDB int64
+
+func (t TVDB) id() string   { return strconv.Itoa(int(t)) }
+func (t TVDB) path() string { return "tvdb" }
+
+type TMDB int64
+
+func (t TMDB) id() string   { return strconv.Itoa(int(t)) }
+func (t TMDB) path() string { return "tmdb" }
+
+type baseIDs struct {
 	Slug Slug `json:"slug"`
 }
 
-type ObjectIds struct {
-	IDs
+type objectIds struct {
+	baseIDs
 	Trakt ID `json:"trakt"`
 }
 
-type MediaIDs struct {
+type mediaIDs struct {
 	Slug   Slug `json:"slug,omitempty"`
 	Trakt  ID   `json:"trakt,omitempty"`
-	TVDB   int  `json:"tvdb,omitempty"`
+	TVDB   TVDB `json:"tvdb,omitempty"`
 	IMDB   IMDB `json:"imdb,omitempty"`
-	TMDB   int  `json:"tmdb,omitempty"`
-	TVRage int  `json:"tv_rage,omitempty"`
+	TMDB   TMDB `json:"tmdb,omitempty"`
+	TVRage int  `json:"tvrage,omitempty"`
 }
 
 type Type string
@@ -76,6 +92,7 @@ const (
 	TypeSeason  Type = `season`
 	TypeEpisode Type = `episode`
 	TypeList    Type = `list`
+	TypePerson  Type = `person`
 )
 
 type SharingParams struct {
@@ -85,14 +102,14 @@ type SharingParams struct {
 }
 
 type GenericElementParams struct {
-	MediaIDs `json:"ids"`
+	mediaIDs `json:"ids"`
 
 	Title string `json:"title,omitempty"`
 	Year  int64  `json:"year,omitempty"`
 }
 
-type CommonElements struct {
-	MediaIDs `json:"ids"`
+type commonElements struct {
+	mediaIDs `json:"ids"`
 
 	Title                 string    `json:"title"`
 	Overview              string    `json:"overview"`
@@ -105,11 +122,15 @@ type CommonElements struct {
 	Comments              int64     `json:"comment_count"`
 }
 
-type GenericMediaElement struct {
+type topLevelMediaElement struct {
 	Type Type `json:"type"`
 
-	Show    *Show    `json:"show"`
-	Movie   *Movie   `json:"movie"`
+	Show  *Show  `json:"show"`
+	Movie *Movie `json:"movie"`
+}
+
+type GenericMediaElement struct {
+	topLevelMediaElement
 	Episode *Episode `json:"episode"`
 }
 
@@ -130,7 +151,6 @@ func (li *GenericMediaElementIterator) Movie() *Movie {
 type GenericElement struct {
 	GenericMediaElement
 
-	//Season *Season `json:"season"`
 	List *List `json:"list"`
 }
 
@@ -139,3 +159,6 @@ type ListByTypeParams struct {
 
 	Type Type `json:"type"`
 }
+
+// IDPath helper function to format a search id into a search URL.
+func IDPath(id SearchID) string { return "/search/" + id.path() + "/%s" }

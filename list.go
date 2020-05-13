@@ -4,13 +4,33 @@ import "time"
 
 type Privacy string
 
+func (p Privacy) String() string { return string(p) }
+
 const (
 	Private Privacy = "private"
 	Public  Privacy = "public"
 )
 
+type ListType string
+
+func (l ListType) String() string { return string(l) }
+
+const (
+	ListTypeAll          = ListType(All)
+	Personal    ListType = "personal"
+	Official    ListType = "official"
+	Watchlist   ListType = "watchlists"
+)
+
+type GetListParams struct {
+	BasicListParams
+
+	SortType SortType `json:"-" url:"-"`
+	ListType ListType `json:"-" url:"-"`
+}
+
 type List struct {
-	ObjectIds `json:"ids"`
+	objectIds `json:"ids"`
 
 	Name           string    `json:"name"`
 	Description    string    `json:"description"`
@@ -25,6 +45,10 @@ type List struct {
 	Comments       int64     `json:"comment_count"`
 	User           *User     `json:"user"`
 }
+
+type ListIterator struct{ Iterator }
+
+func (r *ListIterator) List() *List { return r.Current().(*List) }
 
 // RecentList represents a list with the most
 // recent like and comment figures, usually over the last

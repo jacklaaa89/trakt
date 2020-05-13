@@ -1,15 +1,13 @@
 package comment
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/jackaaa89/trakt"
 )
 
-type Client struct {
-	B   trakt.Backend
-	Key string
-}
+type Client struct{ b *trakt.BaseClient }
 
 // Get attempts to retrieve a comment by its id.
 func Get(id string, params *trakt.BasicParams) (*trakt.Comment, error) {
@@ -20,7 +18,7 @@ func Get(id string, params *trakt.BasicParams) (*trakt.Comment, error) {
 func (c *Client) Get(id string, params *trakt.BasicParams) (*trakt.Comment, error) {
 	path := trakt.FormatURLPath("/comments/%s", id)
 	com := &trakt.Comment{}
-	err := c.B.Call(http.MethodGet, path, c.Key, params, com)
+	err := c.b.Call(http.MethodGet, path, params, com)
 	return com, err
 }
 
@@ -31,14 +29,9 @@ func Likes(id string, params *trakt.BasicListParams) *trakt.UserLikeIterator {
 
 // Likes generates an iterator to retrieve the users which liked a comment by id.
 func (c *Client) Likes(id string, params *trakt.BasicListParams) *trakt.UserLikeIterator {
-	return &trakt.UserLikeIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			list := make([]*trakt.UserLike, 0)
-			f := trakt.NewEmptyFrame(&list)
-			err := c.B.CallWithFrame(http.MethodGet, trakt.FormatURLPath("/comments/%s/likes", id), c.Key, p, f)
-			return f, err
-		}),
-	}
+	list := make([]*trakt.UserLike, 0)
+	path := trakt.FormatURLPath("/comments/%s/likes", id)
+	return &trakt.UserLikeIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &list)}
 }
 
 // Replies retrieves a list of replies attached to a comment by id.
@@ -48,14 +41,9 @@ func Replies(id string, params *trakt.ListParams) *trakt.CommentIterator {
 
 // Replies retrieves a list of replies attached to a comment by id.
 func (c *Client) Replies(id string, params *trakt.ListParams) *trakt.CommentIterator {
-	return &trakt.CommentIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			list := make([]*trakt.Comment, 0)
-			f := trakt.NewEmptyFrame(&list)
-			err := c.B.CallWithFrame(http.MethodGet, trakt.FormatURLPath("/comments/%s/replies", id), c.Key, p, f)
-			return f, err
-		}),
-	}
+	list := make([]*trakt.Comment, 0)
+	path := trakt.FormatURLPath("/comments/%s/replies", id)
+	return &trakt.CommentIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &list)}
 }
 
 // Item attempts to retrieve the item associated with a comment.
@@ -67,7 +55,7 @@ func Item(id string, params *trakt.ExtendedParams) (*trakt.GenericElement, error
 func (c *Client) Item(id string, params *trakt.ExtendedParams) (*trakt.GenericElement, error) {
 	path := trakt.FormatURLPath("/comments/%s/item", id)
 	com := &trakt.GenericElement{}
-	err := c.B.Call(http.MethodGet, path, c.Key, params, com)
+	err := c.b.Call(http.MethodGet, path, params, com)
 	return com, err
 }
 
@@ -108,8 +96,11 @@ func Post(params *trakt.PostCommentParams) (*trakt.Comment, error) {
 
 // Post attempts to post a new comment on an item.
 func (c *Client) Post(params *trakt.PostCommentParams) (*trakt.Comment, error) {
+	if params == nil {
+		return nil, errors.New(`params cannot be nil`)
+	}
 	com := &trakt.Comment{}
-	err := c.B.Call(http.MethodPost, "/comments", c.Key, &wrappedPostCommentParams{*params}, &com)
+	err := c.b.Call(http.MethodPost, "/comments", &wrappedPostCommentParams{params}, &com)
 	return com, err
 }
 
@@ -121,11 +112,10 @@ func Update(id string, params *trakt.UpdateCommentParams) (*trakt.Comment, error
 // Update attempts to update a comment on an item.
 func (c *Client) Update(id string, params *trakt.UpdateCommentParams) (*trakt.Comment, error) {
 	com := &trakt.Comment{}
-	err := c.B.Call(
+	err := c.b.Call(
 		http.MethodPut,
 		trakt.FormatURLPath("/comments/%s", id),
-		c.Key,
-		&wrappedUpdateCommentParams{*params},
+		&wrappedUpdateCommentParams{params},
 		&com,
 	)
 	return com, err
@@ -138,9 +128,13 @@ func Remove(id string, params *trakt.Params) error {
 
 // Remove attempts to remove a comment by id.
 func (c *Client) Remove(id string, params *trakt.Params) error {
-	return c.B.Call(
+	if params == nil {
+		return errors.New(`params cannot be nil`)
+	}
+
+	return c.b.Call(
 		http.MethodDelete, trakt.FormatURLPath("/comment/%s", id),
-		c.Key, &wrappedRemoveCommentParams{*params}, nil,
+		&wrappedRemoveCommentParams{params}, nil,
 	)
 }
 
@@ -151,12 +145,15 @@ func AddReply(id string, params *trakt.AddReplyParams) (*trakt.Comment, error) {
 
 // AddReply attempts to add a reply to a comment by id.
 func (c *Client) AddReply(id string, params *trakt.AddReplyParams) (*trakt.Comment, error) {
+	if params == nil {
+		return nil, errors.New(`params cannot be nil`)
+	}
+
 	com := &trakt.Comment{}
-	err := c.B.Call(
+	err := c.b.Call(
 		http.MethodPost,
 		trakt.FormatURLPath("/comments/%s/replies", id),
-		c.Key,
-		&wrappedUpdateCommentParams{*params},
+		&wrappedUpdateCommentParams{params},
 		&com,
 	)
 	return com, err
@@ -169,7 +166,7 @@ func AddLike(id string, params *trakt.Params) error {
 
 // AddLike attempts to add a like to a comment.
 func (c *Client) AddLike(id string, params *trakt.Params) error {
-	return c.B.Call(http.MethodPost, trakt.FormatURLPath("/comments/%s/like", id), c.Key, params, nil)
+	return c.b.Call(http.MethodPost, trakt.FormatURLPath("/comments/%s/like", id), params, nil)
 }
 
 // RemoveLike attempts to remove as like on a comment.
@@ -179,22 +176,22 @@ func RemoveLike(id string, params *trakt.Params) error {
 
 // RemoveLike attempts to remove as like on a comment.
 func (c *Client) RemoveLike(id string, params *trakt.Params) error {
-	return c.B.Call(http.MethodDelete, trakt.FormatURLPath("/comments/%s/like", id), c.Key, params, nil)
+	return c.b.Call(http.MethodDelete, trakt.FormatURLPath("/comments/%s/like", id), params, nil)
 }
 
-type wrappedPostCommentParams struct{ trakt.PostCommentParams }
+type wrappedPostCommentParams struct{ *trakt.PostCommentParams }
 
 func (wrappedPostCommentParams) Code(statusCode int) trakt.ErrorCode {
 	return commentErrorHandler(statusCode)
 }
 
-type wrappedUpdateCommentParams struct{ trakt.UpdateCommentParams }
+type wrappedUpdateCommentParams struct{ *trakt.UpdateCommentParams }
 
 func (wrappedUpdateCommentParams) Code(statusCode int) trakt.ErrorCode {
 	return commentErrorHandler(statusCode)
 }
 
-type wrappedRemoveCommentParams struct{ trakt.Params }
+type wrappedRemoveCommentParams struct{ *trakt.Params }
 
 func (wrappedRemoveCommentParams) Code(statusCode int) trakt.ErrorCode {
 	return commentErrorHandler(statusCode)
@@ -219,28 +216,23 @@ func commentErrorHandler(statusCode int) trakt.ErrorCode {
 // - Updates
 // as the only thing that changes is the action that is called in terms of arguments.
 func (c *Client) generateIterator(action string, params *trakt.TrendingCommentParams) *trakt.CommentWithMediaElementIterator {
+	list := make([]*trakt.CommentWithMediaElement, 0)
+
+	var ct, mt = trakt.All, trakt.All
+	if params.MediaType != "" {
+		mt = string(params.MediaType)
+	}
+	if params.CommentType != "" {
+		mt = string(params.CommentType)
+	}
+
+	path := trakt.FormatURLPath("/comments/%s/%s/%s", action, ct, mt)
+
 	return &trakt.CommentWithMediaElementIterator{
 		GenericMediaElementIterator: trakt.GenericMediaElementIterator{
-			Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-				list := make([]*trakt.CommentWithMediaElement, 0)
-				var ct, mt = trakt.All, trakt.All
-				if params.MediaType != "" {
-					mt = string(params.MediaType)
-				}
-				if params.CommentType != "" {
-					mt = string(params.CommentType)
-				}
-
-				f := trakt.NewEmptyFrame(&list)
-				path := trakt.FormatURLPath("/comments/%s/%s/%s", action, ct, mt)
-				err := c.B.CallWithFrame(http.MethodGet, path, c.Key, p, f)
-
-				return f, err
-			}),
+			Iterator: c.b.NewIterator(http.MethodGet, path, params, &list),
 		},
 	}
 }
 
-func getC() *Client {
-	return &Client{B: trakt.GetBackend(), Key: trakt.Key}
-}
+func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

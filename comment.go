@@ -9,10 +9,10 @@ import (
 type CommentType string
 
 const (
-	CommentTypeUnspecified CommentType = `unspecified`
-	CommentTypeReview      CommentType = `review`
-	CommentTypeShout       CommentType = `shout`
-	CommentTypeAll                     = CommentType(All)
+	Unspecified    CommentType = `unspecified`
+	Review         CommentType = `review`
+	Shout          CommentType = `shout`
+	CommentTypeAll             = CommentType(All)
 )
 
 type PostCommentParams struct {
@@ -55,7 +55,7 @@ type UpdatedCommentParams = TrendingCommentParams
 type CommentListParams struct {
 	BasicListParams
 
-	Sort CommentSortType `json:"-" url:"-"`
+	Sort SortType `json:"-" url:"-"`
 }
 
 type Comment struct {
@@ -89,7 +89,9 @@ type CommentWithMediaElement struct {
 	Comment *Comment `json:"comment"`
 }
 
-type CommentWithMediaElementIterator struct{ GenericMediaElementIterator }
+type CommentWithMediaElementIterator struct {
+	GenericMediaElementIterator
+}
 
 func (li *UserLikeIterator) CommentW() *Comment {
 	return li.Current().(*CommentWithMediaElement).Comment

@@ -1,6 +1,7 @@
 package authorization
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/go-querystring/query"
@@ -29,9 +30,12 @@ func AuthorizeURL(params *trakt.AuthorizationURLParams) (string, error) {
 
 // AuthorizeURL attempts to generates the OAuth URL.
 func (c *Client) AuthorizeURL(params *trakt.AuthorizationURLParams) (string, error) {
+	if params == nil {
+		return "", errors.New("params cannot be nil")
+	}
 	uv, err := query.Values(wrappedAuthorizeURLParams{
 		AuthorizationURLParams: *params,
-		ClientID:               c.Key,
+		ClientID:               c.b.Key,
 		ResponseType:           "code",
 	})
 
@@ -48,7 +52,7 @@ type genericTokenParameters struct {
 }
 
 type wrappedExchangeCodeParams struct {
-	trakt.ExchangeCodeParams
+	*trakt.ExchangeCodeParams
 	genericTokenParameters
 }
 
@@ -62,14 +66,13 @@ func ExchangeCode(params *trakt.ExchangeCodeParams) (*trakt.Token, error) {
 // the only places in the API where the client secret is required.
 func (c *Client) ExchangeCode(params *trakt.ExchangeCodeParams) (*trakt.Token, error) {
 	t := &trakt.Token{}
-	p := &wrappedExchangeCodeParams{*params, genericTokenParameters{c.Key, authorizationCode}}
-
-	err := c.B.Call(http.MethodPost, `/oauth/token`, c.Key, p, t)
+	p := &wrappedExchangeCodeParams{params, genericTokenParameters{c.b.Key, authorizationCode}}
+	err := c.b.Call(http.MethodPost, `/oauth/token`, p, t)
 	return t, err
 }
 
 type wrappedRefreshTokenParams struct {
-	trakt.RefreshTokenParams
+	*trakt.RefreshTokenParams
 	genericTokenParameters
 }
 
@@ -79,14 +82,13 @@ func RefreshToken(params *trakt.RefreshTokenParams) (*trakt.Token, error) {
 
 func (c *Client) RefreshToken(params *trakt.RefreshTokenParams) (*trakt.Token, error) {
 	t := &trakt.Token{}
-	p := &wrappedRefreshTokenParams{*params, genericTokenParameters{c.Key, refreshToken}}
-
-	err := c.B.Call(http.MethodPost, `/oauth/token`, c.Key, p, t)
+	p := &wrappedRefreshTokenParams{params, genericTokenParameters{c.b.Key, refreshToken}}
+	err := c.b.Call(http.MethodPost, `/oauth/token`, p, t)
 	return t, err
 }
 
 type wrappedRevokeTokenParams struct {
-	trakt.RevokeTokenParams
+	*trakt.RevokeTokenParams
 	ClientID string `json:"client_id" url:"-"`
 }
 
@@ -95,6 +97,6 @@ func RevokeToken(params *trakt.RevokeTokenParams) error {
 }
 
 func (c *Client) RevokeToken(params *trakt.RevokeTokenParams) error {
-	p := &wrappedRevokeTokenParams{*params, c.Key}
-	return c.B.Call(http.MethodPost, `/oauth/revoke`, c.Key, p, nil)
+	p := &wrappedRevokeTokenParams{params, c.b.Key}
+	return c.b.Call(http.MethodPost, `/oauth/revoke`, p, nil)
 }

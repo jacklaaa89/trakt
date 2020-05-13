@@ -8,17 +8,14 @@ import (
 	"github.com/jackaaa89/trakt"
 )
 
-type Client struct {
-	B   trakt.Backend
-	Key string
-}
+type Client struct{ b *trakt.BaseClient }
 
 func MyShows(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
 	return getC().MyShows(params)
 }
 
 func (c *Client) MyShows(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
-	return c.shows("my", &wrappedCalendarParams{*params})
+	return c.shows("my", &wrappedCalendarParams{params})
 }
 
 func MyNewShows(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
@@ -26,7 +23,7 @@ func MyNewShows(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
 }
 
 func (c *Client) MyNewShows(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
-	return c.newShows("my", &wrappedCalendarParams{*params})
+	return c.newShows("my", &wrappedCalendarParams{params})
 }
 
 func MySeasonPremieres(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
@@ -34,7 +31,7 @@ func MySeasonPremieres(params *trakt.CalendarParams) *trakt.CalendarShowIterator
 }
 
 func (c *Client) MySeasonPremieres(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
-	return c.seasonPremieres("my", &wrappedCalendarParams{*params})
+	return c.seasonPremieres("my", &wrappedCalendarParams{params})
 }
 
 func Shows(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
@@ -42,7 +39,7 @@ func Shows(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
 }
 
 func (c *Client) Shows(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
-	return c.shows("all", &wrappedBasicCalendarParams{*params})
+	return c.shows("all", &wrappedBasicCalendarParams{params})
 }
 
 func NewShows(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
@@ -50,7 +47,7 @@ func NewShows(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
 }
 
 func (c *Client) NewShows(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
-	return c.newShows("all", &wrappedBasicCalendarParams{*params})
+	return c.newShows("all", &wrappedBasicCalendarParams{params})
 }
 
 func SeasonPremieres(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
@@ -58,7 +55,7 @@ func SeasonPremieres(params *trakt.BasicCalendarParams) *trakt.CalendarShowItera
 }
 
 func (c *Client) SeasonPremieres(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
-	return c.seasonPremieres("all", &wrappedBasicCalendarParams{*params})
+	return c.seasonPremieres("all", &wrappedBasicCalendarParams{params})
 }
 
 func (c *Client) shows(action string, params calendarParams) *trakt.CalendarShowIterator {
@@ -82,21 +79,12 @@ func (c *Client) seasonPremieres(action string, params calendarParams) *trakt.Ca
 	)
 }
 
-type calendarParams interface {
-	trakt.ListParamsContainer
-	startDate() time.Time
-	days() int
+func (c *Client) generateShowIterator(path string, params calendarParams) *trakt.CalendarShowIterator {
+	list := make([]*trakt.CalendarShow, 0)
+	return &trakt.CalendarShowIterator{
+		Iterator: c.b.NewIterator(http.MethodGet, formatPath(path, params), params.elem(), &list),
+	}
 }
-
-type wrappedCalendarParams struct{ trakt.CalendarParams }
-
-func (w *wrappedCalendarParams) startDate() time.Time { return w.StartDate }
-func (w *wrappedCalendarParams) days() int            { return int(w.Days) }
-
-type wrappedBasicCalendarParams struct{ trakt.BasicCalendarParams }
-
-func (w *wrappedBasicCalendarParams) startDate() time.Time { return w.StartDate }
-func (w *wrappedBasicCalendarParams) days() int            { return int(w.Days) }
 
 func formatPath(path string, c calendarParams) string {
 	var days = c.days()
@@ -104,23 +92,27 @@ func formatPath(path string, c calendarParams) string {
 		days = 7
 	}
 
-	return trakt.FormatURLPath(path+"/%s/%s", c.startDate().Format("2006-01-02"), strconv.Itoa(days))
+	date := c.startDate().Format("2006-01-02")
+	return trakt.FormatURLPath(path+"/%s/%s", date, strconv.Itoa(days))
 }
 
-func (c *Client) generateShowIterator(path string, params calendarParams) *trakt.CalendarShowIterator {
-	return &trakt.CalendarShowIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			list := make([]*trakt.CalendarShow, 0)
-			f := trakt.NewEmptyFrame(&list)
-			err := c.B.CallWithFrame(http.MethodGet, formatPath(path, params), c.Key, p, f)
-			return f, err
-		}),
-	}
+type calendarParams interface {
+	trakt.ListParamsContainer
+	startDate() time.Time
+	days() int
+	elem() trakt.ListParamsContainer
 }
 
-func getC() *Client {
-	return &Client{
-		B:   trakt.GetBackend(),
-		Key: trakt.Key,
-	}
-}
+type wrappedCalendarParams struct{ *trakt.CalendarParams }
+
+func (w *wrappedCalendarParams) startDate() time.Time            { return w.StartDate }
+func (w *wrappedCalendarParams) days() int                       { return int(w.Days) }
+func (w *wrappedCalendarParams) elem() trakt.ListParamsContainer { return w.CalendarParams }
+
+type wrappedBasicCalendarParams struct{ *trakt.BasicCalendarParams }
+
+func (w *wrappedBasicCalendarParams) startDate() time.Time            { return w.StartDate }
+func (w *wrappedBasicCalendarParams) days() int                       { return int(w.Days) }
+func (w *wrappedBasicCalendarParams) elem() trakt.ListParamsContainer { return w.BasicCalendarParams }
+
+func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

@@ -6,41 +6,36 @@ import (
 	"github.com/jackaaa89/trakt"
 )
 
-type Client struct {
-	B   trakt.Backend
-	Key string
-}
+type Client struct{ b *trakt.BaseClient }
 
-func Start(params *trakt.ScrobbleParams) (*trakt.Scrobble, error) {
+func Start(params *trakt.ScrobbleParams) (*trakt.ScrobbleEvent, error) {
 	return getC().Start(params)
 }
 
-func (c *Client) Start(params *trakt.ScrobbleParams) (*trakt.Scrobble, error) {
-	s := &trakt.Scrobble{}
-	err := c.B.Call(http.MethodPost, "/scrobble/start", c.Key, params, s)
+func (c *Client) Start(params *trakt.ScrobbleParams) (*trakt.ScrobbleEvent, error) {
+	s := &trakt.ScrobbleEvent{}
+	err := c.b.Call(http.MethodPost, "/scrobble/start", params, s)
 	return s, err
 }
 
-func Pause(params *trakt.ScrobbleParams) (*trakt.Scrobble, error) {
+func Pause(params *trakt.ScrobbleParams) (*trakt.ScrobbleEvent, error) {
 	return getC().Pause(params)
 }
 
-func (c *Client) Pause(params *trakt.ScrobbleParams) (*trakt.Scrobble, error) {
-	s := &trakt.Scrobble{}
-	err := c.B.Call(http.MethodPost, "/scrobble/pause", c.Key, params, s)
+func (c *Client) Pause(params *trakt.ScrobbleParams) (*trakt.ScrobbleEvent, error) {
+	s := &trakt.ScrobbleEvent{}
+	err := c.b.Call(http.MethodPost, "/scrobble/pause", params, s)
 	return s, err
 }
 
-func Stop(params *trakt.ScrobbleParams) (*trakt.Scrobble, error) {
+func Stop(params *trakt.ScrobbleParams) (*trakt.ScrobbleEvent, error) {
 	return getC().Stop(params)
 }
 
-func (c *Client) Stop(params *trakt.ScrobbleParams) (*trakt.Scrobble, error) {
-	s := &trakt.Scrobble{}
-	err := c.B.Call(http.MethodPost, "/scrobble/stop", c.Key, params, s)
+func (c *Client) Stop(params *trakt.ScrobbleParams) (*trakt.ScrobbleEvent, error) {
+	s := &trakt.ScrobbleEvent{}
+	err := c.b.Call(http.MethodPost, "/scrobble/stop", params, s)
 	return s, err
 }
 
-func getC() *Client {
-	return &Client{B: trakt.GetBackend(), Key: trakt.Key}
-}
+func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

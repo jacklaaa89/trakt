@@ -6,24 +6,16 @@ import (
 	"github.com/jackaaa89/trakt"
 )
 
-type Client struct {
-	B   trakt.Backend
-	Key string
-}
+type Client struct{ b *trakt.BaseClient }
 
 func List(params *trakt.ListByTypeParams) *trakt.LanguageIterator {
 	return getC().List(params)
 }
 
 func (c *Client) List(params *trakt.ListByTypeParams) *trakt.LanguageIterator {
-	return &trakt.LanguageIterator{
-		Iterator: trakt.NewSimulatedIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			rcv := make([]*trakt.Language, 0)
-			f := trakt.NewEmptyFrame(&rcv)
-			err := c.B.CallWithFrame(http.MethodGet, trakt.FormatURLPath("/languages/%s", params.Type), c.Key, p, f)
-			return f, err
-		}),
-	}
+	rcv := make([]*trakt.Language, 0)
+	path := trakt.FormatURLPath("/languages/%s", params.Type)
+	return &trakt.LanguageIterator{Iterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
 }
 
-func getC() *Client { return &Client{trakt.GetBackend(), trakt.Key} }
+func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

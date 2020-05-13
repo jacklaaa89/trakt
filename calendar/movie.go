@@ -25,17 +25,11 @@ func (c *Client) DVDs(params *trakt.BasicCalendarParams) *trakt.CalendarMovieIte
 func (c *Client) movies(mediaType string, params *trakt.BasicCalendarParams) *trakt.CalendarMovieIterator {
 	return c.generateMovieIterator(
 		trakt.FormatURLPath("/calendars/all/%s", mediaType),
-		&wrappedBasicCalendarParams{*params},
+		&wrappedBasicCalendarParams{params},
 	)
 }
 
 func (c *Client) generateMovieIterator(path string, params *wrappedBasicCalendarParams) *trakt.CalendarMovieIterator {
-	return &trakt.CalendarMovieIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			list := make([]*trakt.CalendarMovie, 0)
-			f := trakt.NewEmptyFrame(&list)
-			err := c.B.CallWithFrame(http.MethodGet, formatPath(path, params), c.Key, p, f)
-			return f, err
-		}),
-	}
+	list := make([]*trakt.CalendarMovie, 0)
+	return &trakt.CalendarMovieIterator{Iterator: c.b.NewIterator(http.MethodGet, formatPath(path, params), params, &list)}
 }

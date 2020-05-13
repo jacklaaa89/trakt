@@ -9,12 +9,12 @@ type ExtendedType string
 func (e ExtendedType) String() string { return string(e) }
 
 const (
-	ExtendedTypeGuestStars ExtendedType = `guest_stars`
-	ExtendedTypeEpisodes   ExtendedType = `episodes`
-	ExtendedTypeMetadata   ExtendedType = `metadata`
-	ExtendedTypeNoSeasons  ExtendedType = `noseasons`
-	ExtendedTypeVip        ExtendedType = `vip`
-	ExtendedTypeFull       ExtendedType = `full`
+	GuestStars ExtendedType = `guest_stars`
+	Episodes   ExtendedType = `episodes`
+	Metadata   ExtendedType = `metadata`
+	NoSeasons  ExtendedType = `noseasons`
+	Vip        ExtendedType = `vip`
+	Full       ExtendedType = `full`
 )
 
 type TimePeriod string
@@ -22,21 +22,30 @@ type TimePeriod string
 func (t TimePeriod) String() string { return string(t) }
 
 const (
-	TimePeriodWeekly  TimePeriod = "weekly"
-	TimePeriodMonthly TimePeriod = "monthly"
-	TimePeriodYearly  TimePeriod = "yearly"
-	TimePeriodAll                = TimePeriod(All)
+	Weekly        TimePeriod = "weekly"
+	Monthly       TimePeriod = "monthly"
+	Yearly        TimePeriod = "yearly"
+	TimePeriodAll            = TimePeriod(All)
 )
 
-type CommentSortType string
+type SortType string
 
-func (c CommentSortType) String() string { return string(c) }
+func (s SortType) String() string { return string(s) }
 
 const (
-	SortTypeNewest  CommentSortType = "newest"
-	SortTypeOldest  CommentSortType = "oldest"
-	SortTypeReplies CommentSortType = "replies"
-	SortTypeHighest CommentSortType = "highest"
-	SortTypeLowest  CommentSortType = "lowest"
-	SortTypePlays   CommentSortType = "plays"
+	// these sort types are used for comment sorting.
+	Newest  SortType = "newest"
+	Oldest  SortType = "oldest"
+	Replies SortType = "replies"
+	Highest SortType = "highest"
+	Lowest  SortType = "lowest"
+	Plays   SortType = "plays"
+
+	// these sort types are used for list sorting.
+	Popular  SortType = "popular"
+	Likes    SortType = "likes"
+	Comments SortType = "comments"
+	Items    SortType = "items"
+	Added    SortType = "added"
+	Updated  SortType = "updated"
 )

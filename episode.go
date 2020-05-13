@@ -3,7 +3,7 @@ package trakt
 import "time"
 
 type Episode struct {
-	CommonElements `json:",inline"`
+	commonElements `json:",inline"`
 
 	Season     int64     `json:"season"`
 	Number     int64     `json:"number"`

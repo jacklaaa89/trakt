@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-func NewEmptyFrame(rcv interface{}) IterationFrame { return &frame{r: rcv} }
+func newEmptyFrame(rcv interface{}) iterationFrame { return &frame{r: rcv} }
 
 type frame struct {
 	ListMeta
@@ -13,9 +13,9 @@ type frame struct {
 
 func (f *frame) rcv() interface{} { return f.r }
 
-// IterationFrame represents a window or slice of
+// iterationFrame represents a window or slice of
 // an entire pagination result.
-type IterationFrame interface {
+type iterationFrame interface {
 	// rcv returns the receiver which the response data is unmarshalled into.
 	rcv() interface{}
 	// meta the current metadata for the position we are in the complete set.
@@ -26,7 +26,7 @@ type Iterator interface {
 	Current() interface{}
 	Err() error
 	Next() bool
-	getPage() IterationFrame
+	getPage() iterationFrame
 }
 
 type singleIter struct {
@@ -40,8 +40,8 @@ type singleIter struct {
 func (s *singleIter) Current() interface{} { return s.cur }
 func (s *singleIter) Err() error           { return s.err }
 
-func (s *singleIter) getPage() IterationFrame {
-	var window IterationFrame
+func (s *singleIter) getPage() iterationFrame {
+	var window iterationFrame
 	cp := s.listParams
 
 	// we pass a copy through so that internally we dont update our reference.
@@ -99,7 +99,7 @@ func (it *iter) Next() bool {
 	return it.singleIter.Next()
 }
 
-func (it *iter) getPage() IterationFrame {
+func (it *iter) getPage() iterationFrame {
 	window := it.singleIter.getPage()
 	if window != nil {
 		it.meta = window.meta()
@@ -109,10 +109,10 @@ func (it *iter) getPage() IterationFrame {
 }
 
 // Query is the function used to get a page listing.
-type Query func(ListParamsContainer) (IterationFrame, error)
+type Query func(ListParamsContainer) (iterationFrame, error)
 
-// NewIterator returns a new iter for a given query and its options.
-func NewIterator(container ListParamsContainer, query Query) Iterator {
+// newIterator returns a new iter for a given query and its options.
+func newIterator(container ListParamsContainer, query Query) Iterator {
 	iter := &iter{
 		singleIter: singleIter{
 			listParams: container,
@@ -125,11 +125,11 @@ func NewIterator(container ListParamsContainer, query Query) Iterator {
 	return iter
 }
 
-// NewSimulatedIterator a simulated iterator is an iterator which
+// newSimulatedIterator a simulated iterator is an iterator which
 // only works its way though the single frame (result set) it will never
 // attempt to move to another page. This is used so we can have all lists of
 // results (paginated or not) will utilise an iterator so the library is consistent.
-func NewSimulatedIterator(container ListParamsContainer, query Query) Iterator {
+func newSimulatedIterator(container ListParamsContainer, query Query) Iterator {
 	iter := &singleIter{
 		query:      query,
 		listParams: container,

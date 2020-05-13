@@ -8,9 +8,9 @@ import (
 type Action string
 
 const (
-	StartAction    Action = "start"
-	PauseAction    Action = "pause"
-	ScrobbleAction Action = "scrobble"
+	Start    Action = "start"
+	Pause    Action = "pause"
+	Scrobble Action = "scrobble"
 )
 
 type ScrobbleParams struct {
@@ -30,7 +30,7 @@ func (s *ScrobbleParams) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m)
 }
 
-type Scrobble struct {
+type ScrobbleEvent struct {
 	basePlaybackItem
 
 	Action   Action  `json:"action"`

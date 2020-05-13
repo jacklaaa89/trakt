@@ -8,13 +8,13 @@ import (
 type ReleaseType string
 
 const (
-	ReleaseTypeUnknown    ReleaseType = "unknown"
-	ReleaseTypePremiere   ReleaseType = "premiere"
-	ReleaseTypeLimited    ReleaseType = "limited"
-	ReleaseTypeTheatrical ReleaseType = "theatrical"
-	ReleaseTypeDigital    ReleaseType = "digital"
-	ReleaseTypePhysical   ReleaseType = "physical"
-	ReleaseTypeTV         ReleaseType = "tv"
+	Unknown    ReleaseType = "unknown"
+	Premiere   ReleaseType = "premiere"
+	Limited    ReleaseType = "limited"
+	Theatrical ReleaseType = "theatrical"
+	Digital    ReleaseType = "digital"
+	Physical   ReleaseType = "physical"
+	TV         ReleaseType = "tv"
 )
 
 type TimePeriodListParams struct {
@@ -40,7 +40,7 @@ type ReleaseListParams struct {
 }
 
 type Movie struct {
-	CommonElements `json:",inline"`
+	commonElements `json:",inline"`
 
 	Year          uint      `json:"year"`
 	Tagline       string    `json:"tagline"`
@@ -132,7 +132,7 @@ func (m *RecentlyUpdatedMovieIterator) Movie() *RecentlyUpdatedMovie {
 }
 
 type MovieWithStatistics struct {
-	BasicStatistics
+	statistics
 	Movie *Movie `json:"movie"`
 }
 

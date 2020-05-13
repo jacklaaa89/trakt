@@ -9,7 +9,7 @@ type Airs struct {
 }
 
 type Show struct {
-	CommonElements `json:",inline"`
+	commonElements `json:",inline"`
 
 	Year          int64     `json:"year"`
 	FirstAired    time.Time `json:"first_aired"`

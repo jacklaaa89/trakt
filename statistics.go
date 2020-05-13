@@ -1,6 +1,6 @@
 package trakt
 
-type BasicStatistics struct {
+type statistics struct {
 	Watchers  int64 `json:"watcher_count"`
 	Plays     int64 `json:"play_count"`
 	Collected int64 `json:"collected_count"`

@@ -6,23 +6,16 @@ import (
 	"github.com/jackaaa89/trakt"
 )
 
-type Client struct {
-	B   trakt.Backend
-	Key string
-}
+type Client struct{ b *trakt.BaseClient }
 
 func Movies(params *trakt.RecommendationListParams) *trakt.MovieIterator {
 	return getC().Movies(params)
 }
 
 func (c *Client) Movies(params *trakt.RecommendationListParams) *trakt.MovieIterator {
+	l := make([]*trakt.Movie, 0)
 	return &trakt.MovieIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			l := make([]*trakt.Movie, 0)
-			f := trakt.NewEmptyFrame(&l)
-			err := c.B.CallWithFrame(http.MethodGet, "/recommendations/movies", c.Key, p, f)
-			return f, err
-		}),
+		Iterator: c.b.NewIterator(http.MethodGet, "/recommendations/movies", params, &l),
 	}
 }
 
@@ -31,13 +24,9 @@ func Shows(params *trakt.RecommendationListParams) *trakt.ShowIterator {
 }
 
 func (c *Client) Shows(params *trakt.RecommendationListParams) *trakt.ShowIterator {
+	l := make([]*trakt.Show, 0)
 	return &trakt.ShowIterator{
-		Iterator: trakt.NewIterator(params, func(p trakt.ListParamsContainer) (trakt.IterationFrame, error) {
-			l := make([]*trakt.Show, 0)
-			f := trakt.NewEmptyFrame(&l)
-			err := c.B.CallWithFrame(http.MethodGet, "/recommendations/shows", c.Key, p, f)
-			return f, err
-		}),
+		Iterator: c.b.NewIterator(http.MethodGet, "/recommendations/shows", params, &l),
 	}
 }
 
@@ -46,7 +35,7 @@ func HideShow(id trakt.SearchID, params *trakt.Params) error {
 }
 
 func (c *Client) HideShow(id trakt.SearchID, params *trakt.Params) error {
-	return c.B.Call(http.MethodDelete, trakt.FormatURLPath("/recommendations/shows/%s", id), c.Key, params, nil)
+	return c.b.Call(http.MethodDelete, trakt.FormatURLPath("/recommendations/shows/%s", id), params, nil)
 }
 
 func HideMovie(id trakt.SearchID, params *trakt.Params) error {
@@ -54,9 +43,7 @@ func HideMovie(id trakt.SearchID, params *trakt.Params) error {
 }
 
 func (c *Client) HideMovie(id trakt.SearchID, params *trakt.Params) error {
-	return c.B.Call(http.MethodDelete, trakt.FormatURLPath("/recommendations/movies/%s", id), c.Key, params, nil)
+	return c.b.Call(http.MethodDelete, trakt.FormatURLPath("/recommendations/movies/%s", id), params, nil)
 }
 
-func getC() *Client {
-	return &Client{B: trakt.GetBackend(), Key: trakt.Key}
-}
+func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
