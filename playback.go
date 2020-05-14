@@ -1,6 +1,19 @@
 package trakt
 
-import "encoding/json"
+import "time"
+
+type ListPlaybackParams struct {
+	Params
+
+	Type  Type  `json:"-" url:"-"`
+	Limit int64 `json:"-" url:"limit,omitempty"`
+}
+
+type RemovePlaybackParams struct {
+	Params
+
+	Type Type `json:"-" url:"-"`
+}
 
 type basePlaybackItem struct {
 	GenericMediaElement
@@ -8,21 +21,12 @@ type basePlaybackItem struct {
 	Sharing *SharingParams `json:"sharing"`
 }
 
-func (b *basePlaybackItem) UnmarshalJSON(bytes []byte) error {
-	type A basePlaybackItem
-	var a = new(A)
-	err := json.Unmarshal(bytes, a)
-	if err != nil {
-		return err
-	}
-
-	switch {
-	case a.Episode != nil:
-		a.Type = TypeEpisode
-	case a.Movie != nil:
-		a.Type = TypeMovie
-	}
-
-	*b = basePlaybackItem(*a)
-	return nil
+type Playback struct {
+	basePlaybackItem
+	Progress float64   `json:"progress"`
+	PausedAt time.Time `json:"paused_at"`
 }
+
+type PlaybackIterator struct{ BasicIterator }
+
+func (p *PlaybackIterator) Playback() *Playback { return p.Current().(*Playback) }

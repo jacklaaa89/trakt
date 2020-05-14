@@ -7,6 +7,7 @@ import (
 
 type CalendarParams struct {
 	ListParams
+	Filters
 
 	StartDate time.Time    `url:"-"`
 	Days      int64        `url:"-"`
@@ -15,6 +16,7 @@ type CalendarParams struct {
 
 type BasicCalendarParams struct {
 	BasicListParams
+	Filters
 
 	StartDate time.Time    `url:"-"`
 	Days      int64        `url:"-"`

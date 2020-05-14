@@ -5,6 +5,6 @@ type Language struct {
 	Code string `json:"code"`
 }
 
-type LanguageIterator struct{ Iterator }
+type LanguageIterator struct{ BasicIterator }
 
 func (c *LanguageIterator) Language() *Language { return c.Current().(*Language) }

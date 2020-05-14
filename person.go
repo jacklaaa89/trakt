@@ -22,7 +22,7 @@ const (
 )
 
 type Person struct {
-	mediaIDs `json:"ids"`
+	MediaIDs `json:"ids"`
 
 	Name       string    `json:"name"`
 	Biography  string    `json:"biography"`
@@ -67,12 +67,14 @@ func (p *Person) UnmarshalJSON(bytes []byte) error {
 
 type CastEntry struct {
 	Characters []string `json:"characters"`
+	Episodes   *int64   `json:"episode_count"`
 	Person     *Person  `json:"person"`
 }
 
 type CrewEntry struct {
-	Jobs   []string `json:"jobs"`
-	Person *Person  `json:"person"`
+	Jobs     []string `json:"jobs"`
+	Episodes *int64   `json:"episode_count"`
+	Person   *Person  `json:"person"`
 }
 
 type CastAndCrew struct {

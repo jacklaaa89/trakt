@@ -325,8 +325,11 @@ func (s *BackendImplementation) SetMaxNetworkRetries(maxNetworkRetries int) {
 
 // unmarshalJSONVerbose unmarshals JSON, but in case of a failure logs and
 // produces a more descriptive error.
-func (s *BackendImplementation) unmarshalJSONVerbose(res *http.Response, body []byte, v, h interface{}) error {
-	err := json.Unmarshal(body, v)
+// rcv represents the receiver for the JSON response.
+// con represents the container for the receiver. This can be nil or an iterator
+// wrapper if we are unmarshalling a single frame from a iteration result.
+func (s *BackendImplementation) unmarshalJSONVerbose(res *http.Response, body []byte, rcv, con interface{}) error {
+	err := json.Unmarshal(body, rcv)
 	if err != nil {
 		bodySample := string(body)
 		if len(bodySample) > 500 {
@@ -337,7 +340,7 @@ func (s *BackendImplementation) unmarshalJSONVerbose(res *http.Response, body []
 		bodySample = strings.Replace(bodySample, "\n", "\\n", -1)
 
 		newErr := fmt.Errorf(
-			"couldn't deserialize JSON (response status: %v, body sample: '%s'): %v",
+			"couldn't deserialize JSON (response status: %rcv, body sample: '%s'): %rcv",
 			res.StatusCode, bodySample, err,
 		)
 		s.LeveledLogger.Errorf("%s", newErr.Error())
@@ -348,15 +351,39 @@ func (s *BackendImplementation) unmarshalJSONVerbose(res *http.Response, body []
 	// we always want to perform JSON unmarshalling to.
 	// this is just to grab additional information that is
 	// not just provided in the response body.
-	switch m := h.(type) {
-	case headerUnmarshaller:
-		err = m.UnmarshalHeaders(res.Header)
-	}
-
+	err = unmarshalHeaders(res, con)
 	if err != nil {
 		s.LeveledLogger.Errorf("%s", err)
+		return err
 	}
+
+	// there may be rare instances where
+	// the actual receiver requires some metadata
+	// from the headers (while also the container is an iterator)
+	//
+	// so also check to see if the receiver implements it too
+	// if the container and receiver are not the same.
+	// as we dont want to potentially trigger an unmarshal on headers
+	// twice.
+	if con != nil {
+		err = unmarshalHeaders(res, rcv)
+		if err != nil {
+			s.LeveledLogger.Errorf("%s", err)
+			return err
+		}
+	}
+
 	return err
+}
+
+// unmarshalHeaders quick function to unmarshal the HTTP response headers
+// into the receiver if it implements the required interface.
+func unmarshalHeaders(res *http.Response, i interface{}) error {
+	switch m := i.(type) {
+	case headerUnmarshaller:
+		return m.UnmarshalHeaders(res.Header)
+	}
+	return nil
 }
 
 // Checks if an error is a problem that we should retry on. This includes both
@@ -502,7 +529,7 @@ func Float64Slice(v []float64) []*float64 {
 // and returns a formatted string.
 //
 // we perform a quick type comparison to handle some well-known types
-// including a SearchID or a fmt.Stringer or string, it any of the
+// including a SearchID or a fmt.Stringer or string or any primitive int/uint type, it any of the
 // parameters are not of these types, then we ignore the value
 // as it should only be of of these three types.
 // this would cause come very noticeable formatting errors.
@@ -519,6 +546,9 @@ func FormatURLPath(format string, params ...interface{}) string {
 			formatted = p.String()
 		case SearchID:
 			formatted = p.id()
+		case int, int8, int16, int32, int64,
+			uint, uint8, uint16, uint32, uint64:
+			formatted = fmt.Sprintf("%d", p)
 		default:
 			continue
 		}

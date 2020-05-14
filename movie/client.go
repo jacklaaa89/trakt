@@ -8,20 +8,20 @@ import (
 
 type Client struct{ b *trakt.BaseClient }
 
-func Trending(params *trakt.ExtendedListParams) *trakt.TrendingMovieIterator {
+func Trending(params *trakt.FilterListParams) *trakt.TrendingMovieIterator {
 	return getC().Trending(params)
 }
 
-func (c *Client) Trending(params *trakt.ExtendedListParams) *trakt.TrendingMovieIterator {
+func (c *Client) Trending(params *trakt.FilterListParams) *trakt.TrendingMovieIterator {
 	tml := make([]*trakt.TrendingMovie, 0)
 	return &trakt.TrendingMovieIterator{Iterator: c.b.NewIterator(http.MethodGet, "/movies/trending", params, &tml)}
 }
 
-func Popular(params *trakt.ExtendedListParams) *trakt.MovieIterator {
+func Popular(params *trakt.FilterListParams) *trakt.MovieIterator {
 	return getC().Popular(params)
 }
 
-func (c *Client) Popular(params *trakt.ExtendedListParams) *trakt.MovieIterator {
+func (c *Client) Popular(params *trakt.FilterListParams) *trakt.MovieIterator {
 	rcv := make([]*trakt.Movie, 0)
 	return &trakt.MovieIterator{Iterator: c.b.NewIterator(http.MethodGet, "/movies/popular", params, &rcv)}
 }
@@ -50,11 +50,11 @@ func (c *Client) Collected(params *trakt.TimePeriodListParams) *trakt.MovieWithS
 	return c.newTimePeriodIterator("collected", params)
 }
 
-func Anticipated(params *trakt.ExtendedListParams) *trakt.AnticipatedMovieIterator {
+func Anticipated(params *trakt.FilterListParams) *trakt.AnticipatedMovieIterator {
 	return getC().Anticipated(params)
 }
 
-func (c *Client) Anticipated(params *trakt.ExtendedListParams) *trakt.AnticipatedMovieIterator {
+func (c *Client) Anticipated(params *trakt.FilterListParams) *trakt.AnticipatedMovieIterator {
 	rcv := make([]*trakt.AnticipatedMovie, 0)
 	return &trakt.AnticipatedMovieIterator{Iterator: c.b.NewIterator(http.MethodGet, "/movies/anticipated", params, &rcv)}
 }
@@ -66,7 +66,7 @@ func BoxOffice(params *trakt.BoxOfficeListParams) *trakt.BoxOfficeMovieIterator 
 func (c *Client) BoxOffice(params *trakt.BoxOfficeListParams) *trakt.BoxOfficeMovieIterator {
 	rcv := make([]*trakt.BoxOfficeMovie, 0)
 	return &trakt.BoxOfficeMovieIterator{
-		Iterator: c.b.NewSimulatedIterator(http.MethodGet, "/movies/boxoffice", params, &rcv),
+		BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, "/movies/boxoffice", params, &rcv),
 	}
 }
 
@@ -98,7 +98,7 @@ func Aliases(id trakt.SearchID, params *trakt.BasicParams) *trakt.AliasIterator 
 func (c *Client) Aliases(id trakt.SearchID, params *trakt.BasicParams) *trakt.AliasIterator {
 	rcv := make([]*trakt.Alias, 0)
 	path := trakt.FormatURLPath("movies/%s/aliases", id)
-	return &trakt.AliasIterator{Iterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.AliasIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
 }
 
 func Releases(id trakt.SearchID, params *trakt.ReleaseListParams) *trakt.ReleaseIterator {
@@ -108,7 +108,7 @@ func Releases(id trakt.SearchID, params *trakt.ReleaseListParams) *trakt.Release
 func (c *Client) Releases(id trakt.SearchID, params *trakt.ReleaseListParams) *trakt.ReleaseIterator {
 	rcv := make([]*trakt.Release, 0)
 	path := trakt.FormatURLPath("movies/%s/releases/%s", id, params.Country)
-	return &trakt.ReleaseIterator{Iterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.ReleaseIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
 }
 
 func Translations(id trakt.SearchID, params *trakt.TranslationListParams) *trakt.TranslationIterator {
@@ -118,7 +118,7 @@ func Translations(id trakt.SearchID, params *trakt.TranslationListParams) *trakt
 func (c *Client) Translations(id trakt.SearchID, params *trakt.TranslationListParams) *trakt.TranslationIterator {
 	rcv := make([]*trakt.Translation, 0)
 	path := trakt.FormatURLPath("movies/%s/translations/%s", id, params.Language)
-	return &trakt.TranslationIterator{Iterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.TranslationIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
 }
 
 func Comments(id trakt.SearchID, params *trakt.CommentListParams) *trakt.CommentIterator {

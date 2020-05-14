@@ -5,6 +5,6 @@ type Genre struct {
 	Slug Slug   `json:"slug"`
 }
 
-type GenreIterator struct{ Iterator }
+type GenreIterator struct{ BasicIterator }
 
 func (c *GenreIterator) Genre() *Genre { return c.Current().(*Genre) }

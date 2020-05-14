@@ -10,12 +10,12 @@ import (
 type Client struct{ b *trakt.BaseClient }
 
 // Get attempts to retrieve a comment by its id.
-func Get(id string, params *trakt.BasicParams) (*trakt.Comment, error) {
+func Get(id int64, params *trakt.BasicParams) (*trakt.Comment, error) {
 	return getC().Get(id, params)
 }
 
 // Get attempts to retrieve a comment by its id.
-func (c *Client) Get(id string, params *trakt.BasicParams) (*trakt.Comment, error) {
+func (c *Client) Get(id int64, params *trakt.BasicParams) (*trakt.Comment, error) {
 	path := trakt.FormatURLPath("/comments/%s", id)
 	com := &trakt.Comment{}
 	err := c.b.Call(http.MethodGet, path, params, com)
@@ -23,36 +23,36 @@ func (c *Client) Get(id string, params *trakt.BasicParams) (*trakt.Comment, erro
 }
 
 // Likes generates an iterator to retrieve the users which liked a comment by id.
-func Likes(id string, params *trakt.BasicListParams) *trakt.UserLikeIterator {
+func Likes(id int64, params *trakt.BasicListParams) *trakt.UserLikeIterator {
 	return getC().Likes(id, params)
 }
 
 // Likes generates an iterator to retrieve the users which liked a comment by id.
-func (c *Client) Likes(id string, params *trakt.BasicListParams) *trakt.UserLikeIterator {
+func (c *Client) Likes(id int64, params *trakt.BasicListParams) *trakt.UserLikeIterator {
 	list := make([]*trakt.UserLike, 0)
 	path := trakt.FormatURLPath("/comments/%s/likes", id)
 	return &trakt.UserLikeIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &list)}
 }
 
 // Replies retrieves a list of replies attached to a comment by id.
-func Replies(id string, params *trakt.ListParams) *trakt.CommentIterator {
+func Replies(id int64, params *trakt.ListParams) *trakt.CommentIterator {
 	return getC().Replies(id, params)
 }
 
 // Replies retrieves a list of replies attached to a comment by id.
-func (c *Client) Replies(id string, params *trakt.ListParams) *trakt.CommentIterator {
+func (c *Client) Replies(id int64, params *trakt.ListParams) *trakt.CommentIterator {
 	list := make([]*trakt.Comment, 0)
 	path := trakt.FormatURLPath("/comments/%s/replies", id)
 	return &trakt.CommentIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &list)}
 }
 
 // Item attempts to retrieve the item associated with a comment.
-func Item(id string, params *trakt.ExtendedParams) (*trakt.GenericElement, error) {
+func Item(id int64, params *trakt.ExtendedParams) (*trakt.GenericElement, error) {
 	return getC().Item(id, params)
 }
 
 // Item attempts to retrieve the item associated with a comment.
-func (c *Client) Item(id string, params *trakt.ExtendedParams) (*trakt.GenericElement, error) {
+func (c *Client) Item(id int64, params *trakt.ExtendedParams) (*trakt.GenericElement, error) {
 	path := trakt.FormatURLPath("/comments/%s/item", id)
 	com := &trakt.GenericElement{}
 	err := c.b.Call(http.MethodGet, path, params, com)
@@ -105,12 +105,12 @@ func (c *Client) Post(params *trakt.PostCommentParams) (*trakt.Comment, error) {
 }
 
 // Update attempts to update a comment on an item.
-func Update(id string, params *trakt.UpdateCommentParams) (*trakt.Comment, error) {
+func Update(id int64, params *trakt.UpdateCommentParams) (*trakt.Comment, error) {
 	return getC().Update(id, params)
 }
 
 // Update attempts to update a comment on an item.
-func (c *Client) Update(id string, params *trakt.UpdateCommentParams) (*trakt.Comment, error) {
+func (c *Client) Update(id int64, params *trakt.UpdateCommentParams) (*trakt.Comment, error) {
 	com := &trakt.Comment{}
 	err := c.b.Call(
 		http.MethodPut,
@@ -122,12 +122,12 @@ func (c *Client) Update(id string, params *trakt.UpdateCommentParams) (*trakt.Co
 }
 
 // Remove attempts to remove a comment by id.
-func Remove(id string, params *trakt.Params) error {
+func Remove(id int64, params *trakt.Params) error {
 	return getC().Remove(id, params)
 }
 
 // Remove attempts to remove a comment by id.
-func (c *Client) Remove(id string, params *trakt.Params) error {
+func (c *Client) Remove(id int64, params *trakt.Params) error {
 	if params == nil {
 		return errors.New(`params cannot be nil`)
 	}
@@ -139,12 +139,12 @@ func (c *Client) Remove(id string, params *trakt.Params) error {
 }
 
 // AddReply attempts to add a reply to a comment by id.
-func AddReply(id string, params *trakt.AddReplyParams) (*trakt.Comment, error) {
+func AddReply(id int64, params *trakt.AddReplyParams) (*trakt.Comment, error) {
 	return getC().AddReply(id, params)
 }
 
 // AddReply attempts to add a reply to a comment by id.
-func (c *Client) AddReply(id string, params *trakt.AddReplyParams) (*trakt.Comment, error) {
+func (c *Client) AddReply(id int64, params *trakt.AddReplyParams) (*trakt.Comment, error) {
 	if params == nil {
 		return nil, errors.New(`params cannot be nil`)
 	}
@@ -160,22 +160,22 @@ func (c *Client) AddReply(id string, params *trakt.AddReplyParams) (*trakt.Comme
 }
 
 // AddLike attempts to add a like to a comment.
-func AddLike(id string, params *trakt.Params) error {
+func AddLike(id int64, params *trakt.Params) error {
 	return getC().AddLike(id, params)
 }
 
 // AddLike attempts to add a like to a comment.
-func (c *Client) AddLike(id string, params *trakt.Params) error {
+func (c *Client) AddLike(id int64, params *trakt.Params) error {
 	return c.b.Call(http.MethodPost, trakt.FormatURLPath("/comments/%s/like", id), params, nil)
 }
 
 // RemoveLike attempts to remove as like on a comment.
-func RemoveLike(id string, params *trakt.Params) error {
+func RemoveLike(id int64, params *trakt.Params) error {
 	return getC().RemoveLike(id, params)
 }
 
 // RemoveLike attempts to remove as like on a comment.
-func (c *Client) RemoveLike(id string, params *trakt.Params) error {
+func (c *Client) RemoveLike(id int64, params *trakt.Params) error {
 	return c.b.Call(http.MethodDelete, trakt.FormatURLPath("/comments/%s/like", id), params, nil)
 }
 

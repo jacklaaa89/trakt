@@ -14,7 +14,7 @@ func List(params *trakt.BasicParams) *trakt.NetworkIterator {
 
 func (c *Client) List(params *trakt.BasicParams) *trakt.NetworkIterator {
 	l := make([]*trakt.Network, 0)
-	return &trakt.NetworkIterator{Iterator: c.b.NewSimulatedIterator(http.MethodGet, "/networks", params, &l)}
+	return &trakt.NetworkIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, "/networks", params, &l)}
 }
 
 func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

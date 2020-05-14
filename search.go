@@ -25,8 +25,28 @@ const (
 	SearchFieldDescription SearchField = "description"
 )
 
+// TextQueryFilters represents the set of filters which can be applied
+// when performing a Text Lookup. this differs from the generic filter
+// set as we want to force Query to be given.
+type TextQueryFilters struct {
+	Years     []int64  `url:"years,comma,omitempty" json:"-"`
+	Genres    []string `url:"genres,comma,omitempty" json:"-"`
+	Languages []string `url:"languages,comma,omitempty" json:"-"`
+	Countries []string `url:"countries,comma,omitempty" json:"-"`
+	Runtime   *Range   `url:"runtimes,omitempty" json:"-"`
+	Rating    *Range   `url:"ratings,comma,omitempty" json:"-"`
+
+	// filters specific for movies and shows
+	Certifications []string `url:"certifications,comma,omitempty" json:"-"`
+
+	// filters specific for shows
+	Networks []string `url:"networks,comma,omitempty" json:"-"`
+	Statuses []Status `url:"statuses,comma,omitempty" json:"-"`
+}
+
 type SearchQueryParams struct {
 	BasicListParams
+	Filters TextQueryFilters
 
 	Type     Type          `json:"-" url:"-"`
 	Query    string        `json:"-" url:"query"`

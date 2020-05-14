@@ -19,6 +19,7 @@ const (
 
 type TimePeriodListParams struct {
 	BasicListParams
+	Filters
 
 	Period   TimePeriod   `url:"-" json:"-"`
 	Extended ExtendedType `url:"extended" json:"-"`
@@ -51,6 +52,7 @@ type Movie struct {
 	HomepageURL   string    `json:"homepage"`
 	Status        Status    `json:"status"`
 	Genres        []string  `json:"genre"`
+	Language      string    `json:"language"`
 }
 
 func (m *Movie) UnmarshalJSON(bytes []byte) error {
@@ -107,7 +109,7 @@ func (r *Release) UnmarshalJSON(bytes []byte) error {
 	return err
 }
 
-type ReleaseIterator struct{ Iterator }
+type ReleaseIterator struct{ BasicIterator }
 
 func (m *ReleaseIterator) Release() *Release { return m.Current().(*Release) }
 
@@ -156,6 +158,6 @@ type BoxOfficeMovie struct {
 	Movie   *Movie `json:"movie"`
 }
 
-type BoxOfficeMovieIterator struct{ Iterator }
+type BoxOfficeMovieIterator struct{ BasicIterator }
 
 func (m *BoxOfficeMovieIterator) Movie() *BoxOfficeMovie { return m.Current().(*BoxOfficeMovie) }

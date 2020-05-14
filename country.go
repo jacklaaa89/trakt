@@ -5,6 +5,6 @@ type Country struct {
 	Code string `json:"code"`
 }
 
-type CountryIterator struct{ Iterator }
+type CountryIterator struct{ BasicIterator }
 
 func (c *CountryIterator) Country() *Country { return c.Current().(*Country) }

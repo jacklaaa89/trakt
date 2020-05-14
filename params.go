@@ -6,24 +6,24 @@ import (
 	"strconv"
 )
 
-// ListMeta is the structure that contains the common properties
+// listMeta is the structure that contains the common properties
 // of List iterators. The Count property is only populated if the
 // total_count include option is passed in (see tests for example).
-type ListMeta struct {
+type listMeta struct {
 	CurrentPage int64 `json:"-" url:"-"`
 	Limit       int64 `json:"-" url:"-"`
 	TotalPages  int64 `json:"-" url:"-"`
 	TotalCount  int64 `json:"-" url:"-"`
 }
 
-func (l ListMeta) meta() ListMeta { return l }
+func (l listMeta) meta() listMeta { return l }
 
 // UnmarshalHeaders allows us to unmarshal a response from
 // the response HTTP headers.
 // this is the case for pagination values where they are supplied
 // in headers and not the response.
-func (l *ListMeta) UnmarshalHeaders(h http.Header) error {
-	*l = ListMeta{
+func (l *listMeta) UnmarshalHeaders(h http.Header) error {
+	*l = listMeta{
 		Limit:       parseInt(h.Get(`X-Pagination-Limit`)),
 		CurrentPage: parseInt(h.Get(`X-Pagination-Page`)),
 		TotalPages:  parseInt(h.Get(`X-Pagination-Page-Count`)),
@@ -54,7 +54,7 @@ type BasicListParams struct {
 }
 
 func (p *BasicListParams) context() context.Context {
-	if p.Context != nil {
+	if p != nil && p.Context != nil {
 		return p.Context
 	}
 
@@ -62,6 +62,10 @@ func (p *BasicListParams) context() context.Context {
 }
 
 func (p *BasicListParams) headers() http.Header {
+	if p == nil {
+		return nil
+	}
+
 	return p.Headers
 }
 
@@ -97,7 +101,7 @@ type ListParams struct {
 }
 
 func (p *ListParams) context() context.Context {
-	if p.Context != nil {
+	if p != nil && p.Context != nil {
 		return p.Context
 	}
 
@@ -105,10 +109,20 @@ func (p *ListParams) context() context.Context {
 }
 
 func (p *ListParams) headers() http.Header {
+	if p == nil {
+		return nil
+	}
+
 	return p.Headers
 }
 
-func (p *ListParams) oauth() string { return p.OAuth }
+func (p *ListParams) oauth() string {
+	if p == nil {
+		return ``
+	}
+
+	return p.OAuth
+}
 
 func (p *ListParams) setPagination(page, limit int64) {
 	p.Page = Int64(page)
@@ -142,7 +156,7 @@ type BasicParams struct {
 func (p *BasicParams) setPagination(_, _ int64) {}
 
 func (p *BasicParams) context() context.Context {
-	if p.Context != nil {
+	if p != nil && p.Context != nil {
 		return p.Context
 	}
 
@@ -150,6 +164,10 @@ func (p *BasicParams) context() context.Context {
 }
 
 func (p *BasicParams) headers() http.Header {
+	if p == nil {
+		return nil
+	}
+
 	return p.Headers
 }
 
@@ -179,7 +197,7 @@ type Params struct {
 func (p *Params) setPagination(_, _ int64) {}
 
 func (p *Params) context() context.Context {
-	if p.Context != nil {
+	if p != nil && p.Context != nil {
 		return p.Context
 	}
 
@@ -187,10 +205,20 @@ func (p *Params) context() context.Context {
 }
 
 func (p *Params) headers() http.Header {
+	if p == nil {
+		return nil
+	}
+
 	return p.Headers
 }
 
-func (p *Params) oauth() string { return p.OAuth }
+func (p *Params) oauth() string {
+	if p == nil {
+		return ``
+	}
+
+	return p.OAuth
+}
 
 // ParamsContainer is a general interface for which all parameter structs
 // should comply. They achieve this by embedding a Params struct and inheriting

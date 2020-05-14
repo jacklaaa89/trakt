@@ -6,6 +6,6 @@ type Certification struct {
 	Description string `json:"description"`
 }
 
-type CertificationIterator struct{ Iterator }
+type CertificationIterator struct{ BasicIterator }
 
 func (c *CertificationIterator) Certification() *Certification { return c.Current().(*Certification) }

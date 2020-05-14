@@ -13,6 +13,6 @@ type Translation struct {
 	Language string `json:"language"`
 }
 
-type TranslationIterator struct{ Iterator }
+type TranslationIterator struct{ BasicIterator }
 
 func (m *TranslationIterator) Translation() *Translation { return m.Current().(*Translation) }

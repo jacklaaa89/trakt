@@ -5,6 +5,6 @@ type Alias struct {
 	Code string `json:"code"`
 }
 
-type AliasIterator struct{ Iterator }
+type AliasIterator struct{ BasicIterator }
 
 func (a *AliasIterator) Alias() *Alias { return a.Current().(*Alias) }

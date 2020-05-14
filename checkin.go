@@ -30,3 +30,22 @@ type Checkin struct {
 	basePlaybackItem
 	WatchedAt time.Time `json:"watched_at"`
 }
+
+func (c *Checkin) UnmarshalJSON(bytes []byte) error {
+	type A Checkin
+	var a = new(A)
+	err := json.Unmarshal(bytes, a)
+	if err != nil {
+		return err
+	}
+
+	switch {
+	case a.Episode != nil:
+		a.Type = TypeEpisode
+	case a.Movie != nil:
+		a.Type = TypeMovie
+	}
+
+	*c = Checkin(*a)
+	return nil
+}

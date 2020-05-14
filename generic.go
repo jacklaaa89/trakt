@@ -8,14 +8,14 @@ import (
 type Status string
 
 const (
-	StatusReturningSeries Status = `returning series`
-	StatusInProduction    Status = `in production`
-	StatusPlanned         Status = `planned`
-	StatusCancelled       Status = `canceled`
-	StatusEnded           Status = `ended`
-	StatusPostProduction  Status = `post production`
-	StatusRumored         Status = `rumored`
-	StatusReleased        Status = `released`
+	ReturningSeries Status = `returning series`
+	InProduction    Status = `in production`
+	Planned         Status = `planned`
+	Cancelled       Status = `canceled`
+	Ended           Status = `ended`
+	PostProduction  Status = `post production`
+	Rumored         Status = `rumored`
+	Released        Status = `released`
 )
 
 // ExtendedParams params which can be used when a request supports
@@ -23,7 +23,7 @@ const (
 type ExtendedParams struct {
 	BasicParams
 
-	Extended ExtendedType `url:"extended"`
+	Extended ExtendedType `url:"extended" json:"-"`
 }
 
 // ExtendedParams params which can be used when a request supports
@@ -31,7 +31,16 @@ type ExtendedParams struct {
 type ExtendedListParams struct {
 	BasicListParams
 
-	Extended ExtendedType `url:"extended"`
+	Extended ExtendedType `url:"extended" json:"-"`
+}
+
+// FilterListParams params which can be used when a listing option
+// accepts filters which can be applied.
+type FilterListParams struct {
+	BasicListParams
+	Filters
+
+	Extended ExtendedType `url:"extended" json:"-"`
 }
 
 type SearchID interface {
@@ -73,13 +82,13 @@ type objectIds struct {
 	Trakt ID `json:"trakt"`
 }
 
-type mediaIDs struct {
-	Slug   Slug `json:"slug,omitempty"`
-	Trakt  ID   `json:"trakt,omitempty"`
-	TVDB   TVDB `json:"tvdb,omitempty"`
-	IMDB   IMDB `json:"imdb,omitempty"`
-	TMDB   TMDB `json:"tmdb,omitempty"`
-	TVRage int  `json:"tvrage,omitempty"`
+type MediaIDs struct {
+	Slug   Slug `json:"slug,omitempty" url:"-"`
+	Trakt  ID   `json:"trakt,omitempty" url:"-"`
+	TVDB   TVDB `json:"tvdb,omitempty" url:"-"`
+	IMDB   IMDB `json:"imdb,omitempty" url:"-"`
+	TMDB   TMDB `json:"tmdb,omitempty" url:"-"`
+	TVRage int  `json:"tvrage,omitempty" url:"-"`
 }
 
 type Type string
@@ -102,20 +111,19 @@ type SharingParams struct {
 }
 
 type GenericElementParams struct {
-	mediaIDs `json:"ids"`
+	IDs MediaIDs `json:"ids,omitempty" url:"-"`
 
-	Title string `json:"title,omitempty"`
-	Year  int64  `json:"year,omitempty"`
+	Title string `json:"title,omitempty" url:"-"`
+	Year  int64  `json:"year,omitempty" url:"-"`
 }
 
 type commonElements struct {
-	mediaIDs `json:"ids"`
+	MediaIDs `json:"ids"`
 
 	Title                 string    `json:"title"`
 	Overview              string    `json:"overview"`
 	Rating                float64   `json:"rating"`
 	Votes                 int64     `json:"votes"`
-	Language              string    `json:"language"`
 	AvailableTranslations []string  `json:"available_translations"`
 	Runtime               int64     `json:"runtime"`
 	UpdatedAt             time.Time `json:"updated_at"`
