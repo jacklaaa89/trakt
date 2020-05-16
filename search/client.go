@@ -1,12 +1,15 @@
 package search
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/jacklaaa89/trakt"
 )
 
 type Client struct{ b *trakt.BaseClient }
+
+var errorInvalidType = errors.New("invalid type supplied for ID lookup, only IMDB|ID|TVDB|TMDB allowed")
 
 // wrappedSearchQuery this is only required because there seems to be
 // a weird bug with the "query" package in which it only runs the custom
@@ -32,7 +35,15 @@ func IDLookup(id trakt.SearchID, params *trakt.IDLookupParams) *trakt.SearchResu
 
 func (c *Client) IDLookup(id trakt.SearchID, params *trakt.IDLookupParams) *trakt.SearchResultIterator {
 	path := trakt.FormatURLPath(trakt.IDPath(id), id)
-	return &trakt.SearchResultIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
+	return &trakt.SearchResultIterator{
+		Iterator: c.b.NewIteratorWithCondition(http.MethodGet, path, params, func() error {
+			switch id.(type) {
+			case trakt.Slug, *trakt.Slug:
+				return errorInvalidType
+			}
+			return nil
+		}),
+	}
 }
 
 func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

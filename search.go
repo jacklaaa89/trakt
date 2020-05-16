@@ -87,7 +87,7 @@ func (s *SearchQueryParams) EncodeValues(_ string, v *url.Values) error {
 type IDLookupParams struct {
 	BasicListParams
 
-	Type     Type         `json:"-" url:"-"`
+	Type     []Type       `json:"-" url:"type,comma,omitempty"`
 	Extended ExtendedType `json:"-" url:"extended,omitempty"`
 }
 
