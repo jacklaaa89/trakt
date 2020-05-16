@@ -21,10 +21,10 @@ const (
 // of List iterators. The Count property is only populated if the
 // total_count include option is passed in (see tests for example).
 type listMeta struct {
-	currentPage int64 `json:"-" url:"-"`
-	limit       int64 `json:"-" url:"-"`
-	totalPages  int64 `json:"-" url:"-"`
-	totalCount  int64 `json:"-" url:"-"`
+	currentPage int64
+	limit       int64
+	totalPages  int64
+	totalCount  int64
 }
 
 func (l *listMeta) meta() *listMeta { return l }
