@@ -27,6 +27,10 @@ const (
 )
 
 var (
+	// productionConfig default configuration for a production environment.
+	productionConfig = &BackendConfig{URL: apiURL}
+	// stagingConfig default configuration for the staging environment.
+	stagingConfig = &BackendConfig{URL: stagingURL}
 	// defaultCondition the default condition function, with never returns an error.
 	defaultCondition Condition = func() error { return nil }
 	// Key is the Trakt API key used globally in the binding.
@@ -41,6 +45,12 @@ type (
 	// an error, then the error on the iterator is set to the error, and no more paging is performed.
 	Condition func() error
 )
+
+// Production sets the API to use the production environment.
+func Production() { setBackend(GetBackendWithConfig(productionConfig)) }
+
+// Staging sets up the API to use the staging environment.
+func Staging() { setBackend(GetBackendWithConfig(stagingConfig)) }
 
 // NewClient generates a new client which all other clients should inherit from.
 func NewClient(b Backend) *BaseClient { return &BaseClient{B: b, Key: Key} }
@@ -751,6 +761,7 @@ func StringSlice(v []string) []*string {
 }
 
 const apiURL = "https://api.trakt.tv"
+const stagingURL = "https://api-staging.trakt.tv"
 
 // clientVersion is the binding version
 const clientVersion = "0.1.0"
