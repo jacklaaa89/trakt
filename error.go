@@ -36,6 +36,10 @@ const (
 
 	// Error codes specific to performing a checkin
 	ErrorCodeCheckinInProgress ErrorCode = "checkin_in_progress"
+
+	// Error codes for miscellaneous errors from within the SDK.
+	ErrorCodeEmptyFrameData ErrorCode = "empty_frame_data"
+	ErrorCodeEncodingError  ErrorCode = "encoding_error"
 )
 
 // DefaultErrorHandler the default error handler which is used to determine

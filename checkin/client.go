@@ -7,7 +7,7 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-type Client struct{ b *trakt.BaseClient }
+type Client struct{ b trakt.BaseClient }
 
 func Start(params *trakt.StartCheckinParams) (*trakt.Checkin, error) {
 	return getC().Start(params)
@@ -44,4 +44,4 @@ func (wrappedCheckinParams) Code(statusCode int) trakt.ErrorCode {
 	return trakt.DefaultErrorHandler.Code(statusCode)
 }
 
-func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
+func getC() *Client { return &Client{trakt.NewClient()} }

@@ -6,7 +6,7 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-type Client struct{ b *trakt.BaseClient }
+type Client struct{ b trakt.BaseClient }
 
 func Trending(params *trakt.FilterListParams) *trakt.TrendingShowIterator {
 	return getC().Trending(params)
@@ -245,4 +245,4 @@ func handleNoEpisodeFound(e *trakt.Episode, err error) (*trakt.Episode, error) {
 	return e, nil
 }
 
-func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
+func getC() *Client { return &Client{trakt.NewClient()} }

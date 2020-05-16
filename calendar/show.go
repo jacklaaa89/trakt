@@ -8,7 +8,7 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-type Client struct{ b *trakt.BaseClient }
+type Client struct{ b trakt.BaseClient }
 
 func MyShows(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
 	return getC().MyShows(params)
@@ -114,4 +114,4 @@ func (w *wrappedBasicCalendarParams) startDate() time.Time            { return w
 func (w *wrappedBasicCalendarParams) days() int                       { return int(w.Days) }
 func (w *wrappedBasicCalendarParams) elem() trakt.ListParamsContainer { return w.BasicCalendarParams }
 
-func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
+func getC() *Client { return &Client{trakt.NewClient()} }

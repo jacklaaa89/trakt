@@ -6,7 +6,7 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-type Client struct{ b *trakt.BaseClient }
+type Client struct{ b trakt.BaseClient }
 
 func Start(params *trakt.ScrobbleParams) (*trakt.Scrobble, error) {
 	return getC().Start(params)
@@ -38,4 +38,4 @@ func (c *Client) Stop(params *trakt.ScrobbleParams) (*trakt.Scrobble, error) {
 	return s, err
 }
 
-func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
+func getC() *Client { return &Client{trakt.NewClient()} }

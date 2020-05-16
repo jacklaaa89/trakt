@@ -1,4 +1,4 @@
-// Package stripe provides the binding for Stripe REST APIs.
+// Package trakt provides bindings for all of Trakt API calls.
 package trakt
 
 import (
@@ -20,20 +20,50 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
+// APIVersion is the currently supported API version
+const APIVersion string = "2"
+
 const (
-	// APIVersion is the currently supported API version
-	APIVersion string = "2"
-	OAuthURL   string = "https://trakt.tv"
+	// default URL endpoints for the production / staging APIs
+	apiURL     = "https://api.trakt.tv"
+	stagingURL = "https://api-staging.trakt.tv"
+	// default URLs used for generating the authorization URL
+	oAuthURL        string = "https://trakt.tv"
+	stagingOAuthURL string = "https://staging.trakt.tv"
+
+	// clientVersion is the binding version
+	clientVersion = "0.1.0"
+
+	// defaultHTTPTimeout is the default timeout on the http.Client used by the library.
+	defaultHTTPTimeout = 80 * time.Second
+
+	// maxNetworkRetriesDelay and minNetworkRetriesDelay defines sleep time in milliseconds between
+	// tries to send HTTP request again after network failure.
+	maxNetworkRetriesDelay = 5000 * time.Millisecond
+	minNetworkRetriesDelay = 500 * time.Millisecond
+
+	// applicationTypeJSON the required content-type used in all requests.
+	applicationTypeJSON = "application/json"
+	// requestIDHeader the header which contains the requestID.
+	requestIDHeader = "X-Request-ID"
 )
 
 var (
 	// productionConfig default configuration for a production environment.
-	productionConfig = &BackendConfig{URL: apiURL}
+	productionConfig = &BackendConfig{URL: apiURL, oAuthURL: oAuthURL}
 	// stagingConfig default configuration for the staging environment.
-	stagingConfig = &BackendConfig{URL: stagingURL}
+	stagingConfig = &BackendConfig{URL: stagingURL, oAuthURL: stagingOAuthURL}
+
 	// defaultCondition the default condition function, with never returns an error.
 	defaultCondition Condition = func() error { return nil }
-	// Key is the Trakt API key used globally in the binding.
+	// supportedBackends a thread-safe way of retrieving / updating the HTTP backends.
+	supportedBackends backends
+	// encodedUserAgent the user-agent to send with all requests to trakt.
+	encodedUserAgent string
+	// The default HTTP client used for communication with the API.
+	httpClient = &http.Client{Timeout: defaultHTTPTimeout}
+
+	// key is the Trakt API key used globally in the binding.
 	Key string
 )
 
@@ -46,62 +76,153 @@ type (
 	Condition func() error
 )
 
-// Production sets the API to use the production environment.
-func Production() { setBackend(GetBackendWithConfig(productionConfig)) }
-
-// Staging sets up the API to use the staging environment.
-func Staging() { setBackend(GetBackendWithConfig(stagingConfig)) }
-
-// NewClient generates a new client which all other clients should inherit from.
-func NewClient(b Backend) *BaseClient { return &BaseClient{B: b, Key: Key} }
-
-// BaseClient a base client which gives us default functionality to parent client implementations.
-type BaseClient struct {
-	// B the backend to query, this is an interface by design
-	// it allows us to override the underlined HTTP backend for tests etc
-	B Backend
-	// Key the API (client_id) to use in requests, this is inherited from the var Key
-	Key string
+// init performs initial initialisation. defaulting to a production configuration.
+func init() {
+	encodedUserAgent = "Trakt/" + APIVersion + " Go/" + clientVersion
+	Production()
 }
 
-// newIterator helper function which performs all of the boilerplate code to generate an
-// iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
-// for each frame, rather than allocate a new rcv for each frame processed.
-func (b *BaseClient) NewIterator(method, path string, p ListParamsContainer) Iterator {
+// Production sets the API to use the production environment.
+func Production() { setBackend(getBackendWithConfig(productionConfig)) }
+
+// Staging sets up the API to use the staging environment.
+func Staging() { setBackend(getBackendWithConfig(stagingConfig)) }
+
+// WithConfig sets up the API with the supplied config.
+func WithConfig(bk *BackendConfig) { setBackend(getBackendWithConfig(bk)) }
+
+// NewClient generates a new client which all other clients should inherit from.
+func NewClient() BaseClient { return &baseClient{B: getBackend(), key: Key} }
+
+// BackendConfig is used to configure a new Trakt backend.
+type BackendConfig struct {
+	// client is an HTTP client instance to use when making API requests.
+	//
+	// If left unset, it'll be set to a default HTTP client for the package.
+	HTTPClient *http.Client
+
+	// leveledLogger is the logger that the backend will use to log errors,
+	// warnings, and informational messages.
+	LeveledLogger LeveledLoggerInterface
+
+	// maxNetworkRetries sets maximum number of times that the library will
+	// retry requests that appear to have failed due to an intermittent
+	// problem.
+	//
+	// Defaults to 0.
+	MaxNetworkRetries int
+
+	// URL is the base URL to use for API paths.
+	URL string
+
+	// oAuthURL is the base URL to use for OAuth paths.
+	// this cannot be overridden.
+	oAuthURL string
+}
+
+// headerUnmarshaller interface which is used to inform the unmarshaller
+// that we need to unmarshal this type using the response headers.
+type headerUnmarshaller interface {
+	// unmarshalHeaders allows us to unmarshal using data supplied in the
+	// response errors.
+	unmarshalHeaders(h http.Header) error
+}
+
+// backend is an interface for making calls against a trakt service.
+type backend interface {
+	// call performs a call to path using the defined HTTP method and unmarshalling the result into v.
+	call(method, path, key string, params ParamsContainer, v interface{}) error
+	// callWithFrame performs a call using the defined HTTP method and unmarshalling into the supplied iterationFrame.
+	callWithFrame(method, path, key string, params ParamsContainer, v iterationFrame) error
+	// oAuthURL returns the
+	oAuthURL() string
+}
+
+// BaseClient the base implementation of a client.
+// this gives access to methods all clients will use without giving the client access
+// to any of the underlined HTTP handling code.
+type BaseClient interface {
+	// NewIterator creates a new iterator which paginates through a list of results until the
+	// end or the defined limit. the iterator uses the supplied method and path to create the URL
+	// to use.
+	NewIterator(method, path string, p ListParamsContainer) Iterator
+
+	// NewIteratorWithCondition creates a new iterator which paginates through a list of results
+	// but with a condition which is invokes before every frame is queried to see if the params
+	// are still valid.
+	NewIteratorWithCondition(method, path string, p ListParamsContainer, cnd Condition) Iterator
+
+	// NewIterator creates a new iterator which paginates through a list of results until the
+	// end or the defined limit. the iterator uses the supplied method and path to create the URL
+	// to use.
+	// A simulated iterator is an iterator instance which implements the standard Iterator interface
+	// but only actually loads for the first page, because there are API endpoints which return a list
+	// but dont require pagination, this allows us to have a standard interface for all lists.
+	NewSimulatedIterator(method, path string, p ListParamsContainer) Iterator
+
+	// NewIteratorWithCondition creates a new iterator which paginates through a list of results
+	// but with a condition which is invokes before every frame is queried to see if the params
+	// are still valid.
+	// A simulated iterator is an iterator instance which implements the standard Iterator interface
+	// but only actually loads for the first page, because there are API endpoints which return a list
+	// but dont require pagination, this allows us to have a standard interface for all lists.
+	NewSimulatedIteratorWithCondition(method, path string, p ListParamsContainer, cnd Condition) Iterator
+
+	// Call performs a simple HTTP call and unmarshals the result into v.
+	Call(method, path string, params ParamsContainer, v interface{}) error
+
+	// key returns the assigned clientID, this is mainly used for authorization.
+	Key() string
+
+	// OAuthURL returns the OAuthURL assigned to the config.
+	OAuthURL() string
+}
+
+// backends are the currently supported endpoints.
+type backends struct {
+	sync.RWMutex
+	API backend
+}
+
+// baseClient a base client which gives us default functionality to parent client implementations.
+type baseClient struct {
+	// B the backend to query, this is an interface by design
+	// it allows us to override the underlined HTTP backend for tests etc
+	B backend
+	// key the API (client_id) to use in requests, this is inherited from the var key
+	key string
+}
+
+// oAuthURL returns the defined oAuthURL for the configuration.
+func (b *baseClient) OAuthURL() string { return b.B.oAuthURL() }
+
+// NewIterator implements BaseClient interface.
+func (b *baseClient) NewIterator(method, path string, p ListParamsContainer) Iterator {
 	return b.newIteratorWithReceiver(newIterator, method, path, p, defaultCondition, false)
 }
 
-// NewIteratorWithCondition helper function which performs all of the boilerplate code to generate an
-// iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
-// for each frame, rather than allocate a new rcv for each frame processed. if the supplied condition returns
-// an error on each times we attempt to retrieve a frame, then the error is set to the returned error and
-// no more paging is performed.
-func (b *BaseClient) NewIteratorWithCondition(method, path string, p ListParamsContainer, cnd Condition) Iterator {
+// NewIteratorWithCondition implements BaseClient interface.
+func (b *baseClient) NewIteratorWithCondition(method, path string, p ListParamsContainer, cnd Condition) Iterator {
 	return b.newIteratorWithReceiver(newIterator, method, path, p, cnd, false)
 }
 
-// newIterator helper function which performs all of the boilerplate code to generate an
-// iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
-// for each frame, rather than allocate a new rcv for each frame processed.
-func (b *BaseClient) NewSimulatedIterator(method, path string, p ListParamsContainer) Iterator {
+// NewSimulatedIterator implements BaseClient interface.
+func (b *baseClient) NewSimulatedIterator(method, path string, p ListParamsContainer) Iterator {
 	return b.newIteratorWithReceiver(newSimulatedIterator, method, path, p, defaultCondition, false)
 }
 
-// NewIteratorWithCondition helper function which performs all of the boilerplate code to generate an
-// iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
-// for each frame, rather than allocate a new rcv for each frame processed. if the supplied condition returns
-// an error on each times we attempt to retrieve a frame, then the error is set to the returned error and
-// no more paging is performed.
-func (b *BaseClient) NewSimulatedIteratorWithCondition(
-	method, path string, p ListParamsContainer, cnd Condition,
-) Iterator {
+// NewIteratorWithCondition implements BaseClient interface.
+func (b *baseClient) NewSimulatedIteratorWithCondition(method, path string, p ListParamsContainer, cnd Condition) Iterator {
 	return b.newIteratorWithReceiver(newSimulatedIterator, method, path, p, cnd, false)
 }
+
+// Key implements BaseClient interface.
+func (b *baseClient) Key() string { return b.key }
 
 // newIteratorWithReceiver helper function which performs all of the boilerplate code to generate an
 // iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
 // for each frame, rather than allocate a new rcv for each frame processed.
-func (b *BaseClient) newIteratorWithReceiver(
+func (b *baseClient) newIteratorWithReceiver(
 	generator iteratorFunc, method, path string, p ListParamsContainer, cnd Condition, lazyLoad bool,
 ) Iterator {
 	return generator(p, func(i ListParamsContainer) (iterationFrame, error) {
@@ -110,64 +231,24 @@ func (b *BaseClient) newIteratorWithReceiver(
 			return f, cErr
 		}
 
-		err := b.B.CallWithFrame(method, path, b.Key, i, f)
+		err := b.B.callWithFrame(method, path, b.Key(), i, f)
 		return f, err
 	}, lazyLoad)
 }
 
 // Call helper function function which calls the underlined backend providing the assigned key.
-func (b *BaseClient) Call(method, path string, params ParamsContainer, v interface{}) error {
-	return b.B.Call(method, path, b.Key, params, v)
+func (b *baseClient) Call(method, path string, params ParamsContainer, v interface{}) error {
+	return b.B.call(method, path, b.Key(), params, v)
 }
 
-// Backend is an interface for making calls against a Stripe service.
-// This interface exists to enable mocking for during testing if needed.
-type Backend interface {
-	Call(method, path, key string, params ParamsContainer, v interface{}) error
-	CallWithFrame(method, path, key string, params ParamsContainer, v iterationFrame) error
-	SetMaxNetworkRetries(maxNetworkRetries int)
-}
-
-// BackendConfig is used to configure a new Stripe backend.
-type BackendConfig struct {
-	// HTTPClient is an HTTP client instance to use when making API requests.
-	//
-	// If left unset, it'll be set to a default HTTP client for the package.
-	HTTPClient *http.Client
-
-	// LeveledLogger is the logger that the backend will use to log errors,
-	// warnings, and informational messages.
-	//
-	// LeveledLoggerInterface is implemented by LeveledLogger, and one can be
-	// initialized at the desired level of logging.  LeveledLoggerInterface
-	// also provides out-of-the-box compatibility with a Logrus Logger, but may
-	// require a thin shim for use with other logging libraries that use less
-	// standard conventions like Zap.
-	LeveledLogger LeveledLoggerInterface
-
-	// MaxNetworkRetries sets maximum number of times that the library will
-	// retry requests that appear to have failed due to an intermittent
-	// problem.
-	//
-	// Defaults to 0.
-	MaxNetworkRetries int
-
-	// URL is the base URL to use for API paths.
-	//
-	// If left empty, it'll be set to the default for the SupportedBackend.
-	URL string
-}
-
-// BackendImplementation is the internal implementation for making HTTP calls
-// to Stripe.
-//
-// The public use of this struct is deprecated. It will be unexported in a
-// future version.
-type BackendImplementation struct {
+// backendImplementation is the internal implementation for making HTTP calls
+// to Trakt.
+type backendImplementation struct {
 	URL               string
-	HTTPClient        *http.Client
-	LeveledLogger     LeveledLoggerInterface
-	MaxNetworkRetries int
+	authURL           string
+	client            *http.Client
+	leveledLogger     LeveledLoggerInterface
+	maxNetworkRetries int
 
 	// networkRetriesSleep indicates whether the backend should use the normal
 	// sleep between retries.
@@ -176,21 +257,27 @@ type BackendImplementation struct {
 	networkRetriesSleep bool
 }
 
-// CallWithFrame called for pagination type functions where we are typically querying for a single frame / segment
-// in the entire set. This puts a higher level of abstraction above that of the basic Call function.
-func (s *BackendImplementation) CallWithFrame(method, path, key string, params ParamsContainer, v iterationFrame) error {
+// oAuthURL returns the oAuthURL for the backend.
+func (s *backendImplementation) oAuthURL() string { return s.authURL }
+
+// callWithFrame called for pagination type functions where we are typically querying for a single frame / segment
+// in the entire set. This puts a higher level of abstraction above that of the basic call function.
+func (s *backendImplementation) callWithFrame(method, path, key string, params ParamsContainer, v iterationFrame) error {
 	if v == nil {
-		return errors.New(`frame data is required`)
+		return &Error{Resource: path, Code: ErrorCodeEmptyFrameData, Body: "frame data is required"}
 	}
+
 	return s.callRaw(method, path, key, params, v.rcv(), v)
 }
 
-func (s *BackendImplementation) Call(method, path, key string, params ParamsContainer, v interface{}) error {
+// call implements the backend interface. performs a call to the trakt API.
+func (s *backendImplementation) call(method, path, key string, params ParamsContainer, v interface{}) error {
 	return s.callRaw(method, path, key, params, v, nil)
 }
 
-// CallRaw is the implementation for invoking Stripe APIs internally without a backend.
-func (s *BackendImplementation) callRaw(method, path, key string, params ParamsContainer, v, h interface{}) error {
+// callRaw executes a HTTP request to the trakt API by generating the path, body and executing the request and
+// unmarshalling the response into v.
+func (s *backendImplementation) callRaw(method, path, key string, params ParamsContainer, v, h interface{}) error {
 	var body []byte
 	if isHTTPWriteMethod(method) {
 		var encodeErr error
@@ -211,7 +298,7 @@ func (s *BackendImplementation) callRaw(method, path, key string, params ParamsC
 
 	bodyBuffer := bytes.NewBuffer(body)
 
-	req, err := s.newRequest(method, path, key, "application/json", params)
+	req, err := s.newRequest(method, path, key, applicationTypeJSON, params)
 	if err != nil {
 		return err
 	}
@@ -224,19 +311,17 @@ func (s *BackendImplementation) callRaw(method, path, key string, params ParamsC
 	return nil
 }
 
-// NewRequest is used by Call to generate an http.Request. It handles encoding
+// newRequest is used by call / callWithFrame to generate an http.Request. It handles encoding
 // parameters and attaching the appropriate headers.
-func (s *BackendImplementation) newRequest(method, path, key, contentType string, params ParamsContainer) (*http.Request, error) {
+func (s *backendImplementation) newRequest(method, path, key, contentType string, params ParamsContainer) (*http.Request, error) {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
 
 	path = s.URL + path
-
-	// Body is set later by `Do`.
 	req, err := http.NewRequest(method, path, nil)
 	if err != nil {
-		s.LeveledLogger.Errorf("Cannot create trakt request: %v", err)
+		s.leveledLogger.Errorf("Cannot create request: %v", err)
 		return nil, err
 	}
 
@@ -268,11 +353,11 @@ func (s *BackendImplementation) newRequest(method, path, key, contentType string
 	return req, nil
 }
 
-// Do is used by Call to execute an API request and parse the response. It uses
+// do is used by call / callWithFrame to execute an API request and parse the response. It uses
 // the backend's HTTP client to execute the request and unmarshals the response
 // into v. It also handles unmarshaling errors returned by the API.
-func (s *BackendImplementation) do(req *http.Request, body *bytes.Buffer, params ParamsContainer, v, h interface{}) error {
-	s.LeveledLogger.Infof("Requesting %v %v%v\n", req.Method, req.URL.Host, req.URL.Path)
+func (s *backendImplementation) do(req *http.Request, body *bytes.Buffer, params ParamsContainer, v, h interface{}) error {
+	s.leveledLogger.Infof("Requesting %v %v%v\n", req.Method, req.URL.Host, req.URL.Path)
 
 	var res *http.Response
 	var err error
@@ -291,10 +376,10 @@ func (s *BackendImplementation) do(req *http.Request, body *bytes.Buffer, params
 			}
 		}
 
-		res, err = s.HTTPClient.Do(req)
+		res, err = s.client.Do(req)
 
 		requestDuration = time.Since(start)
-		s.LeveledLogger.Infof("Request completed in %v (retry: %v)", requestDuration, retry)
+		s.leveledLogger.Infof("Request completed in %v (retry: %v)", requestDuration, retry)
 
 		if err == nil {
 			resBody, err = ioutil.ReadAll(res.Body)
@@ -302,7 +387,7 @@ func (s *BackendImplementation) do(req *http.Request, body *bytes.Buffer, params
 		}
 
 		if err != nil {
-			s.LeveledLogger.Errorf("Request failed with error: %v", err)
+			s.leveledLogger.Errorf("Request failed with error: %v", err)
 		} else if res.StatusCode >= 400 {
 			err = s.responseToError(res, resBody, params)
 		}
@@ -316,7 +401,7 @@ func (s *BackendImplementation) do(req *http.Request, body *bytes.Buffer, params
 		sleepDuration := s.sleepTime(retry)
 		retry++
 
-		s.LeveledLogger.Warnf("Initiating retry %v for request %v %v%v after sleeping %v",
+		s.leveledLogger.Warnf("Initiating retry %v for request %v %v%v after sleeping %v",
 			retry, req.Method, req.URL.Host, req.URL.Path, sleepDuration)
 
 		time.Sleep(sleepDuration)
@@ -326,7 +411,7 @@ func (s *BackendImplementation) do(req *http.Request, body *bytes.Buffer, params
 		return err
 	}
 
-	s.LeveledLogger.Debugf("Response: %s\n", string(resBody))
+	s.leveledLogger.Debugf("Response: %s\n", string(resBody))
 
 	if v != nil {
 		return s.unmarshalJSONVerbose(res, resBody, v, h)
@@ -335,8 +420,8 @@ func (s *BackendImplementation) do(req *http.Request, body *bytes.Buffer, params
 	return nil
 }
 
-// responseToError converts a stripe response to an Error.
-func (s *BackendImplementation) responseToError(res *http.Response, resBody []byte, p ParamsContainer) error {
+// responseToError converts a trakt HTTP status code response to an error.
+func (s *backendImplementation) responseToError(res *http.Response, resBody []byte, p ParamsContainer) error {
 	var errorHandler = DefaultErrorHandler
 	switch e := p.(type) {
 	case ErrorHandler:
@@ -345,18 +430,11 @@ func (s *BackendImplementation) responseToError(res *http.Response, resBody []by
 
 	return &Error{
 		HTTPStatusCode: res.StatusCode,
-		RequestID:      res.Header.Get(`X-Request-ID`),
+		RequestID:      res.Header.Get(requestIDHeader),
 		Body:           string(resBody),
 		Resource:       res.Request.URL.Path,
 		Code:           errorHandler.Code(res.StatusCode),
 	}
-}
-
-// SetMaxNetworkRetries sets max number of retries on failed requests
-//
-// This function is deprecated. Please use GetBackendWithConfig instead.
-func (s *BackendImplementation) SetMaxNetworkRetries(maxNetworkRetries int) {
-	s.MaxNetworkRetries = maxNetworkRetries
 }
 
 // unmarshalJSONVerbose unmarshals JSON, but in case of a failure logs and
@@ -364,7 +442,7 @@ func (s *BackendImplementation) SetMaxNetworkRetries(maxNetworkRetries int) {
 // rcv represents the receiver for the JSON response.
 // con represents the container for the receiver. This can be nil or an iterator
 // wrapper if we are unmarshalling a single frame from a iteration result.
-func (s *BackendImplementation) unmarshalJSONVerbose(res *http.Response, body []byte, rcv, con interface{}) error {
+func (s *backendImplementation) unmarshalJSONVerbose(res *http.Response, body []byte, rcv, con interface{}) error {
 	err := json.Unmarshal(body, rcv)
 	if err != nil {
 		bodySample := string(body)
@@ -372,14 +450,10 @@ func (s *BackendImplementation) unmarshalJSONVerbose(res *http.Response, body []
 			bodySample = bodySample[0:500] + " ..."
 		}
 
-		// Make sure a multi-line response ends up all on one line
-		bodySample = strings.Replace(bodySample, "\n", "\\n", -1)
+		newErr := s.responseToError(res, []byte(strings.Replace(bodySample, "\n", "\\n", -1)), nil)
+		newErr.(*Error).Code = ErrorCodeEncodingError
 
-		newErr := fmt.Errorf(
-			"couldn't deserialize JSON (response status: %v, body sample: '%s'): %v",
-			res.StatusCode, bodySample, err,
-		)
-		s.LeveledLogger.Errorf("%s", newErr.Error())
+		s.leveledLogger.Errorf("%s", newErr)
 		return newErr
 	}
 
@@ -389,7 +463,7 @@ func (s *BackendImplementation) unmarshalJSONVerbose(res *http.Response, body []
 	// not just provided in the response body.
 	err = unmarshalHeaders(res, con)
 	if err != nil {
-		s.LeveledLogger.Errorf("%s", err)
+		s.leveledLogger.Errorf("%s", err)
 		return err
 	}
 
@@ -409,8 +483,8 @@ func unmarshalHeaders(res *http.Response, i interface{}) error {
 // Checks if an error is a problem that we should retry on. This includes both
 // socket errors that may represent an intermittent problem and some special
 // HTTP statuses.
-func (s *BackendImplementation) shouldRetry(err error, req *http.Request, resp *http.Response, numRetries int) bool {
-	if numRetries >= s.MaxNetworkRetries {
+func (s *backendImplementation) shouldRetry(err error, req *http.Request, resp *http.Response, numRetries int) bool {
+	if numRetries >= s.maxNetworkRetries {
 		return false
 	}
 
@@ -460,12 +534,8 @@ func (s *BackendImplementation) shouldRetry(err error, req *http.Request, resp *
 	return false
 }
 
-func isCloudflareError(code int) bool {
-	return code == 520 || code == 521 || code == 522
-}
-
 // sleepTime calculates sleeping/delay time in milliseconds between failure and a new one request.
-func (s *BackendImplementation) sleepTime(numRetries int) time.Duration {
+func (s *backendImplementation) sleepTime(numRetries int) time.Duration {
 	// We disable sleeping in some cases for tests.
 	if !s.networkRetriesSleep {
 		return 0 * time.Second
@@ -490,58 +560,6 @@ func (s *BackendImplementation) sleepTime(numRetries int) time.Duration {
 	}
 
 	return delay
-}
-
-// backends are the currently supported endpoints.
-type backends struct {
-	API Backend
-	mu  sync.RWMutex
-}
-
-// Bool returns a pointer to the bool value passed in.
-func Bool(v bool) *bool {
-	return &v
-}
-
-// BoolValue returns the value of the bool pointer passed in or
-// false if the pointer is nil.
-func BoolValue(v *bool) bool {
-	if v != nil {
-		return *v
-	}
-	return false
-}
-
-// BoolSlice returns a slice of bool pointers given a slice of bools.
-func BoolSlice(v []bool) []*bool {
-	out := make([]*bool, len(v))
-	for i := range v {
-		out[i] = &v[i]
-	}
-	return out
-}
-
-// Float64 returns a pointer to the float64 value passed in.
-func Float64(v float64) *float64 {
-	return &v
-}
-
-// Float64Value returns the value of the float64 pointer passed in or
-// 0 if the pointer is nil.
-func Float64Value(v *float64) float64 {
-	if v != nil {
-		return *v
-	}
-	return 0
-}
-
-// Float64Slice returns a slice of float64 pointers given a slice of float64s.
-func Float64Slice(v []float64) []*float64 {
-	out := make([]*float64, len(v))
-	for i := range v {
-		out[i] = &v[i]
-	}
-	return out
 }
 
 // FormatURLPath takes a format string (of the kind used in the fmt package)
@@ -650,39 +668,18 @@ func formatSlice(slice interface{}) string {
 	return strings.Join(stringSlice[:idx], ",")
 }
 
-// GetBackend returns one of the library's supported backends based off of the
-// given argument.
-//
-// It returns an existing default backend if one's already been created.
-func GetBackend() Backend {
-	var backend Backend
+// getBackend retrieves the API backend.
+func getBackend() backend {
+	supportedBackends.RLock()
+	defer supportedBackends.RUnlock()
 
-	backendList.mu.RLock()
-	backend = backendList.API
-	backendList.mu.RUnlock()
-
-	if backend != nil {
-		return backend
-	}
-
-	backend = GetBackendWithConfig(
-		&BackendConfig{
-			HTTPClient:        httpClient,
-			LeveledLogger:     DefaultLeveledLogger,
-			MaxNetworkRetries: 0,
-			URL:               "", // Set by GetBackendWithConfiguation when empty
-		},
-	)
-
-	setBackend(backend)
-
-	return backend
+	return supportedBackends.API
 }
 
-// GetBackendWithConfig is the same as GetBackend except that it can be given a
+// getBackendWithConfig is the same as getBackend except that it can be given a
 // configuration struct that will configure certain aspects of the backend
 // that's return.
-func GetBackendWithConfig(config *BackendConfig) Backend {
+func getBackendWithConfig(config *BackendConfig) backend {
 	if config.HTTPClient == nil {
 		config.HTTPClient = httpClient
 	}
@@ -695,86 +692,22 @@ func GetBackendWithConfig(config *BackendConfig) Backend {
 		config.URL = apiURL
 	}
 
+	if config.oAuthURL == "" {
+		config.oAuthURL = oAuthURL
+	}
+
 	config.URL = normalizeURL(config.URL)
+	config.oAuthURL = normalizeURL(config.oAuthURL)
 
 	return newBackendImplementation(config)
 }
 
-// Int64 returns a pointer to the int64 value passed in.
-func Int64(v int64) *int64 {
-	return &v
-}
-
-// Int64Value returns the value of the int64 pointer passed in or
-// 0 if the pointer is nil.
-func Int64Value(v *int64) int64 {
-	if v != nil {
-		return *v
-	}
-	return 0
-}
-
-// Int64Slice returns a slice of int64 pointers given a slice of int64s.
-func Int64Slice(v []int64) []*int64 {
-	out := make([]*int64, len(v))
-	for i := range v {
-		out[i] = &v[i]
-	}
-	return out
-}
-
 // setBackend sets the backend used in the binding.
-func setBackend(b Backend) {
-	backendList.mu.Lock()
-	defer backendList.mu.Unlock()
-	backendList.API = b
+func setBackend(b backend) {
+	supportedBackends.Lock()
+	defer supportedBackends.Unlock()
+	supportedBackends.API = b
 }
-
-// SetHTTPClient overrides the default HTTP client.
-// This is useful if you're running in a Google AppEngine environment
-// where the http.DefaultClient is not available.
-func SetHTTPClient(client *http.Client) {
-	httpClient = client
-}
-
-// String returns a pointer to the string value passed in.
-func String(v string) *string {
-	return &v
-}
-
-// StringValue returns the value of the string pointer passed in or
-// "" if the pointer is nil.
-func StringValue(v *string) string {
-	if v != nil {
-		return *v
-	}
-	return ""
-}
-
-// StringSlice returns a slice of string pointers given a slice of strings.
-func StringSlice(v []string) []*string {
-	out := make([]*string, len(v))
-	for i := range v {
-		out[i] = &v[i]
-	}
-	return out
-}
-
-const apiURL = "https://api.trakt.tv"
-const stagingURL = "https://api-staging.trakt.tv"
-
-// clientVersion is the binding version
-const clientVersion = "0.1.0"
-
-// defaultHTTPTimeout is the default timeout on the http.Client used by the library.
-// This is chosen to be consistent with the other Stripe language libraries and
-// to coordinate with other timeouts configured in the Stripe infrastructure.
-const defaultHTTPTimeout = 80 * time.Second
-
-// maxNetworkRetriesDelay and minNetworkRetriesDelay defines sleep time in milliseconds between
-// tries to send HTTP request again after network failure.
-const maxNetworkRetriesDelay = 5000 * time.Millisecond
-const minNetworkRetriesDelay = 500 * time.Millisecond
 
 // nopReadCloser's sole purpose is to give us a way to turn an `io.Reader` into
 // an `io.ReadCloser` by adding a no-op implementation of the `Closer`
@@ -784,67 +717,41 @@ type nopReadCloser struct {
 	io.Reader
 }
 
+// Close implements io.Reader interface.
 func (nopReadCloser) Close() error { return nil }
 
-// headerUnmarshaller interface which is used to inform the unmarshaller
-// that we need to unmarshal this type using the response headers.
-type headerUnmarshaller interface {
-	unmarshalHeaders(h http.Header) error
-}
-
-var backendList backends
-var encodedUserAgent string
-
-// The default HTTP client used for communication with any of Stripe's
-// backends.
-//
-// Can be overridden with the function `SetHTTPClient` or by setting the
-// `HTTPClient` value when using `BackendConfig`.
-var httpClient = &http.Client{
-	Timeout: defaultHTTPTimeout,
-}
-
-//
-// Private functions
-//
-
-func init() {
-	initUserAgent()
-}
-
-func initUserAgent() {
-	encodedUserAgent = "Trakt/v1 GoBindings/" + clientVersion
-}
-
-// newBackendImplementation returns a new Backend based off a given type and
+// newBackendImplementation returns a new backend based off a given type and
 // fully initialized BackendConfig struct.
 //
-// The vast majority of the time you should be calling GetBackendWithConfig
+// The vast majority of the time you should be calling getBackendWithConfig
 // instead of this function.
-func newBackendImplementation(config *BackendConfig) Backend {
-	return &BackendImplementation{
-		HTTPClient:          config.HTTPClient,
-		LeveledLogger:       config.LeveledLogger,
-		MaxNetworkRetries:   config.MaxNetworkRetries,
+func newBackendImplementation(config *BackendConfig) backend {
+	return &backendImplementation{
+		client:              config.HTTPClient,
+		leveledLogger:       config.LeveledLogger,
+		maxNetworkRetries:   config.MaxNetworkRetries,
 		URL:                 config.URL,
 		networkRetriesSleep: true,
 	}
 }
 
+// isHTTPWriteMethod determines if the HTTP supplied is a mutation type.
 func isHTTPWriteMethod(method string) bool {
-	return method == http.MethodPost || method == http.MethodPut || method == http.MethodPatch || method == http.MethodDelete
+	return method == http.MethodPost || method == http.MethodPut ||
+		method == http.MethodPatch || method == http.MethodDelete
 }
 
+// isCloudflareError helper function to determine if a status code represents
+// an error from cloudflare.
+func isCloudflareError(code int) bool {
+	return code == 520 || code == 521 || code == 522
+}
+
+// normalizeURL function which takes a URL string and normalizes it.
 func normalizeURL(url string) string {
 	// All paths include a leading slash, so to keep logs pretty, trim a
 	// trailing slash on the URL.
 	url = strings.TrimSuffix(url, "/")
-
-	// For a long time we had the `/v1` suffix as part of a configured URL
-	// rather than in the per-package URLs throughout the library. Continue
-	// to support this for the time being by stripping one that's been
-	// passed for better backwards compatibility.
-	url = strings.TrimSuffix(url, "/v1")
 
 	return url
 }

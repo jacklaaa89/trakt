@@ -37,15 +37,15 @@ const (
 // DefaultLeveledLogger is the default logger that the library will use to log
 // errors, warnings, and informational messages.
 //
-// LeveledLoggerInterface is implemented by LeveledLogger, and one can be
+// LeveledLoggerInterface is implemented by leveledLogger, and one can be
 // initialized at the desired level of logging.  LeveledLoggerInterface also
 // provides out-of-the-box compatibility with a Logrus Logger, but may require
 // a thin shim for use with other logging libraries that use less standard
 // conventions like Zap.
 //
 // This Logger will be inherited by any backends created by default, but will
-// be overridden if a backend is created with GetBackendWithConfig with a
-// custom LeveledLogger set.
+// be overridden if a backend is created with getBackendWithConfig with a
+// custom leveledLogger set.
 var DefaultLeveledLogger LeveledLoggerInterface = &LeveledLogger{Level: LevelNone}
 
 //
@@ -55,7 +55,7 @@ var DefaultLeveledLogger LeveledLoggerInterface = &LeveledLogger{Level: LevelNon
 // Level represents a logging level.
 type Level uint32
 
-// LeveledLogger is a leveled logger implementation.
+// leveledLogger is a leveled logger implementation.
 //
 // It prints warnings and errors to `os.Stderr` and other messages to
 // `os.Stdout`.
@@ -122,7 +122,7 @@ func (l *LeveledLogger) stdout() io.Writer {
 // LeveledLoggerInterface provides a basic leveled logging interface for
 // printing debug, informational, warning, and error messages.
 //
-// It's implemented by LeveledLogger and also provides out-of-the-box
+// It's implemented by leveledLogger and also provides out-of-the-box
 // compatibility with a Logrus Logger, but may require a thin shim for use with
 // other logging libraries that you use less standard conventions like Zap.
 type LeveledLoggerInterface interface {

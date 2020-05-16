@@ -1,16 +1,12 @@
 package sync
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/jacklaaa89/trakt"
 )
 
-// invalidTypeError error returned when an invalid media type is supplied.
-var invalidTypeError = errors.New("invalid type: only movie / show are applicable")
-
-type Client struct{ b *trakt.BaseClient }
+type Client struct{ b trakt.BaseClient }
 
 func LastActivities(params *trakt.Params) (*trakt.LastActivity, error) {
 	return getC().LastActivities(params)
@@ -61,11 +57,12 @@ func (c *Client) showCollection(params *trakt.ListCollectionParams) *collection 
 }
 
 func (c *Client) newCollectionIterator(t trakt.Type, p *trakt.ListCollectionParams) *collection {
+	path := trakt.FormatURLPath("/sync/collection/%s", t.Plural())
 	return &collection{
 		genericIterator: genericIterator{
 			BasicIterator: c.b.NewSimulatedIteratorWithCondition(
-				http.MethodGet, trakt.FormatURLPath("/sync/collection/%s", t.Plural()), p, func() error {
-					return compareType(p.Type, t)
+				http.MethodGet, path, p, func() error {
+					return compareType(path, p.Type, t)
 				},
 			),
 			typ: p.Type,
@@ -114,11 +111,12 @@ func (c *Client) watchedShows(params *trakt.ListWatchedParams) *watched {
 }
 
 func (c *Client) newWatchedIterator(t trakt.Type, p *trakt.ListWatchedParams) *watched {
+	path := trakt.FormatURLPath("/sync/watched/%s", t.Plural())
 	return &watched{
 		genericIterator: genericIterator{
 			BasicIterator: c.b.NewSimulatedIteratorWithCondition(
-				http.MethodGet, trakt.FormatURLPath("/sync/watched/%s", t.Plural()), p, func() error {
-					return compareType(p.Type, t)
+				http.MethodGet, path, p, func() error {
+					return compareType(path, p.Type, t)
 				},
 			),
 			typ: p.Type,
@@ -245,12 +243,17 @@ func (c *watched) Movie() (*trakt.WatchedMovie, error) {
 }
 
 // compareType helper function to compare to types to see if they are equal.
-func compareType(a, b trakt.Type) error {
+func compareType(path string, a, b trakt.Type) error {
 	if a == b {
 		return nil
 	}
 
-	return invalidTypeError
+	return &trakt.Error{
+		HTTPStatusCode: http.StatusUnprocessableEntity,
+		Body:           "invalid type: only movie / show are applicable",
+		Resource:       path,
+		Code:           trakt.ErrorCodeValidationError,
+	}
 }
 
-func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
+func getC() *Client { return &Client{trakt.NewClient()} }

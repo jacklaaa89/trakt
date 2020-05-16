@@ -7,7 +7,7 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-type Client struct{ b *trakt.BaseClient }
+type Client struct{ b trakt.BaseClient }
 
 // Get attempts to retrieve a comment by its id.
 func Get(id int64, params *trakt.BasicParams) (*trakt.Comment, error) {
@@ -229,4 +229,4 @@ func (c *Client) generateIterator(action string, params *trakt.TrendingCommentPa
 	}
 }
 
-func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
+func getC() *Client { return &Client{trakt.NewClient()} }

@@ -1,15 +1,12 @@
 package search
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/jacklaaa89/trakt"
 )
 
-type Client struct{ b *trakt.BaseClient }
-
-var errorInvalidType = errors.New("invalid type supplied for ID lookup, only IMDB|ID|TVDB|TMDB allowed")
+type Client struct{ b trakt.BaseClient }
 
 // wrappedSearchQuery this is only required because there seems to be
 // a weird bug with the "query" package in which it only runs the custom
@@ -18,6 +15,8 @@ var errorInvalidType = errors.New("invalid type supplied for ID lookup, only IMD
 // see: "github.com/google/go-querystring/query".reflectValues to see what happens.
 type wrappedSearchQuery struct{ *trakt.SearchQueryParams }
 
+// TextQuery performs a search using a textual based query.
+// the query can be restricted to certain search fields by providing the Fields parameter.
 func TextQuery(params *trakt.SearchQueryParams) *trakt.SearchResultIterator {
 	return getC().TextQuery(params)
 }
@@ -29,21 +28,28 @@ func (c *Client) TextQuery(params *trakt.SearchQueryParams) *trakt.SearchResultI
 	return &trakt.SearchResultIterator{Iterator: c.b.NewIterator(http.MethodGet, path, wrappedSearchQuery{params})}
 }
 
+// IDLookup attempts to lookup an entity by ID.
 func IDLookup(id trakt.SearchID, params *trakt.IDLookupParams) *trakt.SearchResultIterator {
 	return getC().IDLookup(id, params)
 }
 
+// IDLookup attempts to lookup an entity by ID.
 func (c *Client) IDLookup(id trakt.SearchID, params *trakt.IDLookupParams) *trakt.SearchResultIterator {
 	path := trakt.FormatURLPath(trakt.IDPath(id), id)
 	return &trakt.SearchResultIterator{
 		Iterator: c.b.NewIteratorWithCondition(http.MethodGet, path, params, func() error {
 			switch id.(type) {
 			case trakt.Slug, *trakt.Slug:
-				return errorInvalidType
+				return &trakt.Error{
+					HTTPStatusCode: http.StatusUnprocessableEntity,
+					Body:           "invalid type supplied for ID lookup, only IMDB|ID|TVDB|TMDB allowed",
+					Resource:       path,
+					Code:           trakt.ErrorCodeValidationError,
+				}
 			}
 			return nil
 		}),
 	}
 }
 
-func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
+func getC() *Client { return &Client{trakt.NewClient()} }

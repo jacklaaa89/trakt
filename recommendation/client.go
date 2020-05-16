@@ -6,7 +6,7 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-type Client struct{ b *trakt.BaseClient }
+type Client struct{ b trakt.BaseClient }
 
 func Movies(params *trakt.RecommendationListParams) *trakt.MovieIterator {
 	return getC().Movies(params)
@@ -40,4 +40,4 @@ func (c *Client) HideMovie(id trakt.SearchID, params *trakt.Params) error {
 	return c.b.Call(http.MethodDelete, trakt.FormatURLPath("/recommendations/movies/%s", id), params, nil)
 }
 
-func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
+func getC() *Client { return &Client{trakt.NewClient()} }

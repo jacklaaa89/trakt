@@ -6,7 +6,7 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-type Client struct{ b *trakt.BaseClient }
+type Client struct{ b trakt.BaseClient }
 
 func Episodes(id trakt.SearchID, season int64, params *trakt.EpisodeListParams) *trakt.EpisodeWithTranslationsIterator {
 	return getC().Episodes(id, season, params)
@@ -81,4 +81,4 @@ func (c *Client) WatchingNow(id trakt.SearchID, season int64, params *trakt.Basi
 	return &trakt.UserIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
-func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
+func getC() *Client { return &Client{trakt.NewClient()} }

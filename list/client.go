@@ -6,7 +6,7 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-type Client struct{ b *trakt.BaseClient }
+type Client struct{ b trakt.BaseClient }
 
 func Trending(params *trakt.BasicListParams) *trakt.RecentListIterator {
 	return getC().Trending(params)
@@ -29,4 +29,4 @@ func (c *Client) generateListIterator(action string, params *trakt.BasicListPara
 	return &trakt.RecentListIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
-func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
+func getC() *Client { return &Client{trakt.NewClient()} }
