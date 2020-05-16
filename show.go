@@ -1,6 +1,9 @@
 package trakt
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type Airs struct {
 	Day      string
@@ -11,7 +14,7 @@ type Airs struct {
 type Show struct {
 	commonElements `json:",inline"`
 
-	Year          int64     `json:"year"`
+	Year          int64     `json:"-"`
 	FirstAired    time.Time `json:"first_aired"`
 	Airs          *Airs     `json:"airs"`
 	Certification string    `json:"certification"`
@@ -22,6 +25,28 @@ type Show struct {
 	Genres        []string  `json:"genre"`
 	AiredEpisodes int64     `json:"aired_episodes"`
 	Language      string    `json:"language"`
+}
+
+func (s *Show) UnmarshalJSON(bytes []byte) error {
+	type B Show
+	type A struct {
+		B
+		Year interface{} `json:"year"`
+	}
+
+	var a = new(A)
+	err := json.Unmarshal(bytes, a)
+	if err != nil {
+		return nil
+	}
+
+	a.B.Year, err = parseYear(a.Year)
+	if err != nil {
+		return err
+	}
+
+	*s = Show(a.B)
+	return nil
 }
 
 type ShowIterator struct{ Iterator }

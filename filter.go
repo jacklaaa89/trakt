@@ -108,7 +108,7 @@ func (r *Range) EncodeValues(key string, v *url.Values) error {
 // endpoints.
 type Filters struct {
 	// Common filters.
-	Query     string   `url:"queryFunc,omitempty" json:"-"`
+	Query     string   `url:"query,omitempty" json:"-"`
 	Years     []int64  `url:"years,comma,omitempty" json:"-"`
 	Genres    []string `url:"genres,comma,omitempty" json:"-"`
 	Languages []string `url:"languages,comma,omitempty" json:"-"`

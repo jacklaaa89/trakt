@@ -1,6 +1,8 @@
 package trakt
 
 import (
+	"errors"
+	"reflect"
 	"strconv"
 	"sync"
 	"time"
@@ -230,3 +232,25 @@ type ListByTypeParams struct {
 
 // IDPath helper function to format a search id into a search URL.
 func IDPath(id SearchID) string { return "/search/" + id.path() + "/%s" }
+
+// parseYear helper function to parse a year from a string or float.
+func parseYear(i interface{}) (int64, error) {
+	v := reflect.ValueOf(i)
+
+	// as per the standard json docs
+	// if the type if not defined (interface{})
+	// the unmarshaller will default to float64
+	// for numbers.
+	// so we will either have a choice of float64 or string.
+	switch v.Kind() {
+	case reflect.Float64:
+		return int64(v.Float()), nil
+	case reflect.String:
+		s := v.String()
+		if s != "" {
+			return strconv.ParseInt(s, 10, 64)
+		}
+	}
+
+	return 0, errors.New("invalid type")
+}

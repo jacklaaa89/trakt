@@ -8,6 +8,13 @@ import (
 
 type Client struct{ b *trakt.BaseClient }
 
+// wrappedSearchQuery this is only required because there seems to be
+// a weird bug with the "query" package in which it only runs the custom
+// encoder on sub-fields and not the top level interface originally supplied to
+// the "query.Values" func.
+// see: "github.com/google/go-querystring/query".reflectValues to see what happens.
+type wrappedSearchQuery struct{ *trakt.SearchQueryParams }
+
 func TextQuery(params *trakt.SearchQueryParams) *trakt.SearchResultIterator {
 	return getC().TextQuery(params)
 }
@@ -16,7 +23,7 @@ func TextQuery(params *trakt.SearchQueryParams) *trakt.SearchResultIterator {
 // the query can be restricted to certain search fields by providing the Fields parameter.
 func (c *Client) TextQuery(params *trakt.SearchQueryParams) *trakt.SearchResultIterator {
 	path := trakt.FormatURLPath("/search/%s", params.Type)
-	return &trakt.SearchResultIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
+	return &trakt.SearchResultIterator{Iterator: c.b.NewIterator(http.MethodGet, path, wrappedSearchQuery{params})}
 }
 
 func IDLookup(id trakt.SearchID, params *trakt.IDLookupParams) *trakt.SearchResultIterator {

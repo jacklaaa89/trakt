@@ -1,5 +1,11 @@
 package trakt
 
+import (
+	"net/url"
+
+	"github.com/google/go-querystring/query"
+)
+
 type SearchField string
 
 func (s SearchField) String() string { return string(s) }
@@ -46,12 +52,36 @@ type TextQueryFilters struct {
 
 type SearchQueryParams struct {
 	BasicListParams
-	Filters TextQueryFilters
 
-	Type     Type          `json:"-" url:"-"`
-	Query    string        `json:"-" url:"queryFunc"`
-	Fields   []SearchField `json:"-" url:"fields,comma,omitempty"`
-	Extended ExtendedType  `json:"-" url:"extended,omitempty"`
+	Filters  TextQueryFilters `json:"-" url:"-"`
+	Type     Type             `json:"-" url:"-"`
+	Query    string           `json:"-" url:"query"`
+	Fields   []SearchField    `json:"-" url:"fields,comma,omitempty"`
+	Extended ExtendedType     `json:"-" url:"extended,omitempty"`
+}
+
+// EncodeValues implements the query.Encoder interface.
+func (s *SearchQueryParams) EncodeValues(_ string, v *url.Values) error {
+	type A SearchQueryParams
+	fv, err := query.Values(s.Filters)
+	if err != nil {
+		return err
+	}
+
+	pv, err := query.Values(A(*s))
+	if err != nil {
+		return err
+	}
+
+	for key, set := range pv {
+		(*v)[key] = set
+	}
+
+	for key, set := range fv {
+		(*v)[key] = set
+	}
+
+	return nil
 }
 
 type IDLookupParams struct {

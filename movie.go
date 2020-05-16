@@ -43,7 +43,7 @@ type ReleaseListParams struct {
 type Movie struct {
 	commonElements `json:",inline"`
 
-	Year          uint      `json:"year"`
+	Year          int64     `json:"-"`
 	Tagline       string    `json:"tagline"`
 	Released      time.Time `json:"released"`
 	Certification string    `json:"certification"`
@@ -59,7 +59,8 @@ func (m *Movie) UnmarshalJSON(bytes []byte) error {
 	type B Movie
 	type A struct {
 		B
-		Released string `json:"released"`
+		Released string      `json:"released"`
+		Year     interface{} `json:"year"`
 	}
 
 	var a = new(A)
@@ -70,6 +71,11 @@ func (m *Movie) UnmarshalJSON(bytes []byte) error {
 
 	if len(a.Released) > 0 {
 		a.B.Released, err = time.Parse(`2006-01-02`, a.Released)
+	}
+
+	a.B.Year, err = parseYear(a.Year)
+	if err != nil {
+		return err
 	}
 
 	*m = Movie(a.B)
