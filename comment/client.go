@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/jackaaa89/trakt"
+	"github.com/jacklaaa89/trakt"
 )
 
 type Client struct{ b *trakt.BaseClient }

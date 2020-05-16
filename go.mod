@@ -1,4 +1,4 @@
-module github.com/jackaaa89/trakt
+module github.com/jacklaaa89/trakt
 
 go 1.14
 

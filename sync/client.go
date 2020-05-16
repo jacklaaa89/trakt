@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/jackaaa89/trakt"
+	"github.com/jacklaaa89/trakt"
 )
 
 // invalidTypeError error returned when an invalid media type is supplied.
