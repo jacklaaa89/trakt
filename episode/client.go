@@ -24,9 +24,8 @@ func Translations(id trakt.SearchID, season, episode int64, params *trakt.Transl
 }
 
 func (c *Client) Translations(id trakt.SearchID, season, episode int64, params *trakt.TranslationListParams) *trakt.TranslationIterator {
-	rcv := make([]*trakt.Translation, 0)
 	path := trakt.FormatURLPath("/shows/%s/seasons/%s/episodes/%s/translations/%s", id, season, episode, params.Language)
-	return &trakt.TranslationIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.TranslationIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params)}
 }
 
 func Comments(id trakt.SearchID, season, episode int64, params *trakt.CommentListParams) *trakt.CommentIterator {
@@ -34,12 +33,11 @@ func Comments(id trakt.SearchID, season, episode int64, params *trakt.CommentLis
 }
 
 func (c *Client) Comments(id trakt.SearchID, season, episode int64, params *trakt.CommentListParams) *trakt.CommentIterator {
-	rcv := make([]*trakt.Comment, 0)
 	path := trakt.FormatURLPath(
 		"shows/%s/seasons/%s/episodes/%s/comments/%s",
 		id, season, episode, params.Sort,
 	)
-	return &trakt.CommentIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.CommentIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func Lists(id trakt.SearchID, season, episode int64, params *trakt.GetListParams) *trakt.ListIterator {
@@ -47,13 +45,11 @@ func Lists(id trakt.SearchID, season, episode int64, params *trakt.GetListParams
 }
 
 func (c *Client) Lists(id trakt.SearchID, season, episode int64, params *trakt.GetListParams) *trakt.ListIterator {
-	rcv := make([]*trakt.List, 0)
-
 	path := trakt.FormatURLPath(
 		"/shows/%s/seasons/%s/episodes/%s/lists/%s/%s",
 		id, season, episode, params.ListType, params.SortType,
 	)
-	return &trakt.ListIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.ListIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func People(id trakt.SearchID, season, episode int64, params *trakt.ExtendedParams) (*trakt.CastAndCrew, error) {
@@ -67,13 +63,13 @@ func (c *Client) People(id trakt.SearchID, season, episode int64, params *trakt.
 	return cc, err
 }
 
-func Ratings(id trakt.SearchID, season, episode int64, params *trakt.BasicParams) (*trakt.Rating, error) {
+func Ratings(id trakt.SearchID, season, episode int64, params *trakt.BasicParams) (*trakt.RatingDistribution, error) {
 	return getC().Ratings(id, season, episode, params)
 }
 
-func (c *Client) Ratings(id trakt.SearchID, season, episode int64, params *trakt.BasicParams) (*trakt.Rating, error) {
+func (c *Client) Ratings(id trakt.SearchID, season, episode int64, params *trakt.BasicParams) (*trakt.RatingDistribution, error) {
 	path := trakt.FormatURLPath("/shows/%s/seasons/%s/episodes/%s/ratings", id, season, episode)
-	r := &trakt.Rating{}
+	r := &trakt.RatingDistribution{}
 	err := c.b.Call(http.MethodGet, path, params, r)
 	return r, err
 }
@@ -94,9 +90,8 @@ func WatchingNow(id trakt.SearchID, season, episode int64, params *trakt.BasicLi
 }
 
 func (c *Client) WatchingNow(id trakt.SearchID, season, episode int64, params *trakt.BasicListParams) *trakt.UserIterator {
-	rcv := make([]*trakt.User, 0)
 	path := trakt.FormatURLPath("/shows/%s/seasons/%s/episodes/%s/watching", id, season, episode)
-	return &trakt.UserIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.UserIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

@@ -5,10 +5,86 @@ import (
 	"time"
 )
 
-type GetCollectionParams struct {
+type Action string
+
+const (
+	ActionWatch    Action = "watch"
+	ActionCheckin  Action = "checkin"
+	ActionScrobble Action = "scrobble"
+)
+
+type MediaType string
+
+const (
+	MediaTypeDigital   MediaType = "digital"
+	MediaTypeBluray    MediaType = "bluray"
+	MediaTypeHDDVD     MediaType = "hddvd"
+	MediaTypeVCD       MediaType = "vcd"
+	MediaTypeVHS       MediaType = "vhs"
+	MediaTypeDVD       MediaType = "dvd"
+	MediaTypeBetaMax   MediaType = "betamax"
+	MediaTypeLaserDisc MediaType = "laserdisc"
+)
+
+type Resolution string
+
+const (
+	ResolutionUHD     Resolution = "uhd_4k"
+	ResolutionHD1080p Resolution = "hd_1080p"
+	ResolutionHD1080i Resolution = "hd_1080i"
+	ResolutionHD720p  Resolution = "hd_720p"
+	ResolutionSD480p  Resolution = "sd_480p"
+	ResolutionSD480i  Resolution = "sd_480i"
+	ResolutionSD576p  Resolution = "sd_576p"
+	ResolutionSD576i  Resolution = "sd_576i"
+)
+
+type HDR string
+
+const (
+	HDRDolbyVision HDR = "dolby_vision"
+	HDR10          HDR = "hdr10"
+	HDR10Plus      HDR = "hdr10_plus"
+	HDRHLG         HDR = "hlg"
+)
+
+type Audio string
+
+const (
+	AudioLPCM             Audio = "lpcm"
+	AudioMP3              Audio = "mp3"
+	AudioAAC              Audio = "acc"
+	AudioOGG              Audio = "ogg"
+	AudioWMA              Audio = "wma"
+	AudioDTS              Audio = "dts"
+	AudioDTSMA            Audio = "dts_ma"
+	AudioDTSHR            Audio = "dts_hr"
+	AudioDTSX             Audio = "dts_x"
+	AudioAuro3D           Audio = "auro_3d"
+	AudioDolbyDigital     Audio = "dolby_digital"
+	AudioDolbyDigitalPlus Audio = "dolby_digital_plus"
+	AudioDolbyAtmos       Audio = "dolby_atmos"
+	AudioDolbyTrueHD      Audio = "dolby_truehd"
+	AudioDolbyPrologic    Audio = "dolby_prologic"
+)
+
+type ListCollectionParams struct {
 	ListParams
 
 	Type     Type         `json:"-" url:"-"`
+	Extended ExtendedType `url:"extended" json:"-"`
+}
+
+type ListWatchedParams = ListCollectionParams
+
+type ListHistoryParams struct {
+	ListParams
+
+	Type Type     `json:"-" url:"-"`
+	ID   SearchID `json:"-" url:"-"`
+
+	StartAt  time.Time    `url:"start_at" json:"-"`
+	EndAt    time.Time    `url:"end_at" json:"-"`
 	Extended ExtendedType `url:"extended" json:"-"`
 }
 
@@ -65,6 +141,126 @@ type AddToCollectionParams struct {
 	Shows    []*ShowCollectionParams  `json:"shows,omitempty" url:"-"`
 }
 
+type EpisodeHistoryParams struct {
+	Number    int64     `json:"number"`
+	WatchedAt time.Time `json:"watched_at,omitempty" url:"-"`
+}
+
+type SeasonHistoryParams struct {
+	Number    int64                   `json:"number"`
+	WatchedAt time.Time               `json:"watched_at,omitempty" url:"-"`
+	Episodes  []*EpisodeHistoryParams `json:"episodes,omitempty"`
+}
+
+type ShowHistoryParams struct {
+	IDs       MediaIDs               `json:"ids,omitempty" url:"-"`
+	Title     string                 `json:"title,omitempty" url:"-"`
+	Year      int64                  `json:"year,omitempty" url:"-"`
+	WatchedAt time.Time              `json:"watched_at,omitempty" url:"-"`
+	Seasons   []*SeasonHistoryParams `json:"seasons,omitempty" url:"-"`
+}
+
+type MediaHistoryParams struct {
+	IDs       MediaIDs  `json:"ids,omitempty" url:"-"`
+	Title     string    `json:"title,omitempty" url:"-"`
+	Year      int64     `json:"year,omitempty" url:"-"`
+	WatchedAt time.Time `json:"watched_at,omitempty" url:"-"`
+}
+
+type AddToHistoryParams struct {
+	Params
+
+	Movies   []*MediaHistoryParams `json:"movies,omitempty" url:"-"`
+	Seasons  []*MediaHistoryParams `json:"seasons,omitempty" url:"-"`
+	Episodes []*MediaHistoryParams `json:"episodes,omitempty" url:"-"`
+	Shows    []*ShowHistoryParams  `json:"shows,omitempty" url:"-"`
+}
+
+type EpisodeRatingParams struct {
+	Number  int64     `json:"number"`
+	Rating  int64     `json:"rating,omitempty"`
+	RatedAt time.Time `json:"rated_at,omitempty" url:"-"`
+}
+
+type SeasonRatingParams struct {
+	Number   int64                  `json:"number"`
+	Rating   int64                  `json:"rating,omitempty"`
+	RatedAt  time.Time              `json:"rated_at,omitempty" url:"-"`
+	Episodes []*EpisodeRatingParams `json:"episodes,omitempty"`
+}
+
+type ShowRatingParams struct {
+	IDs     MediaIDs              `json:"ids,omitempty" url:"-"`
+	Title   string                `json:"title,omitempty" url:"-"`
+	Year    int64                 `json:"year,omitempty" url:"-"`
+	Rating  int64                 `json:"rating,omitempty"`
+	RatedAt time.Time             `json:"rated_at,omitempty" url:"-"`
+	Seasons []*SeasonRatingParams `json:"seasons,omitempty" url:"-"`
+}
+
+type MediaRatingParams struct {
+	IDs     MediaIDs  `json:"ids,omitempty" url:"-"`
+	Title   string    `json:"title,omitempty" url:"-"`
+	Year    int64     `json:"year,omitempty" url:"-"`
+	Rating  int64     `json:"rating,omitempty"`
+	RatedAt time.Time `json:"rated_at,omitempty" url:"-"`
+}
+
+type AddRatingsParams struct {
+	Params
+
+	Movies   []*MediaRatingParams `json:"movies,omitempty" url:"-"`
+	Seasons  []*MediaRatingParams `json:"seasons,omitempty" url:"-"`
+	Episodes []*MediaRatingParams `json:"episodes,omitempty" url:"-"`
+	Shows    []*ShowRatingParams  `json:"shows,omitempty" url:"-"`
+}
+
+type MediaWatchListParams struct {
+	IDs   MediaIDs `json:"ids,omitempty" url:"-"`
+	Title string   `json:"title,omitempty" url:"-"`
+	Year  int64    `json:"year,omitempty" url:"-"`
+}
+
+type SeasonWatchListParams struct {
+	Number      int64     `json:"number"`
+	CollectedAt time.Time `json:"collected_at,omitempty" url:"-"`
+	Episodes    []int64   `json:"episodes,omitempty"`
+}
+
+func (s *SeasonWatchListParams) MarshalJSON() ([]byte, error) {
+	type A SeasonWatchListParams
+	type B struct {
+		Number int64 `json:"number"`
+	}
+	type C struct {
+		A
+		Episodes []*B `json:"episodes,omitempty"`
+	}
+
+	var c = &C{A: A{Number: s.Number}, Episodes: make([]*B, len(s.Episodes))}
+	for idx, epNo := range s.Episodes {
+		c.Episodes[idx] = &B{epNo}
+	}
+
+	return json.Marshal(c)
+}
+
+type ShowWatchListParams struct {
+	IDs     MediaIDs                  `json:"ids,omitempty" url:"-"`
+	Title   string                    `json:"title,omitempty" url:"-"`
+	Year    int64                     `json:"year,omitempty" url:"-"`
+	Seasons []*SeasonCollectionParams `json:"seasons,omitempty" url:"-"`
+}
+
+type AddToWatchListParams struct {
+	Params
+
+	Movies   []*MediaWatchListParams `json:"movies,omitempty" url:"-"`
+	Seasons  []*MediaWatchListParams `json:"seasons,omitempty" url:"-"`
+	Episodes []*MediaWatchListParams `json:"episodes,omitempty" url:"-"`
+	Shows    []*ShowWatchListParams  `json:"shows,omitempty" url:"-"`
+}
+
 type MediaRemovalParams struct {
 	IDs   MediaIDs `json:"ids,omitempty" url:"-"`
 	Title string   `json:"title,omitempty" url:"-"`
@@ -108,6 +304,27 @@ type RemoveFromCollectionParams struct {
 	Seasons  []*MediaRemovalParams `json:"seasons,omitempty" url:"-"`
 	Episodes []*MediaRemovalParams `json:"episodes,omitempty" url:"-"`
 	Shows    []*ShowRemovalParams  `json:"shows,omitempty" url:"-"`
+}
+
+type RemoveFromHistoryParams struct {
+	Params
+
+	Movies   []*MediaRemovalParams `json:"movies,omitempty" url:"-"`
+	Seasons  []*MediaRemovalParams `json:"seasons,omitempty" url:"-"`
+	Episodes []*MediaRemovalParams `json:"episodes,omitempty" url:"-"`
+	Shows    []*ShowRemovalParams  `json:"shows,omitempty" url:"-"`
+	IDs      []int64               `json:"ids,omitempty" url:"-"`
+}
+
+type RemoveFromWatchListParams = RemoveFromCollectionParams
+type RemoveRatingsParams = RemoveFromCollectionParams
+
+type ListWatchListParams struct {
+	ListParams
+
+	Type     Type         `url:"-" json:"-"`
+	Sort     SortType     `url:"-" json:"-"`
+	Extended ExtendedType `url:"extended" json:"-"`
 }
 
 type commonMediaActivity struct {
@@ -160,97 +377,81 @@ type LastActivity struct {
 	Movies      *MovieActivity   `json:"movies"`
 }
 
-type MediaType string
+type CollectionIterator interface {
+	BasicIterator
 
-const (
-	DigitalMedia MediaType = "digital"
-	Bluray       MediaType = "bluray"
-	HDDVD        MediaType = "hddvd"
-	VCD          MediaType = "vcd"
-	VHS          MediaType = "vhs"
-	DVD          MediaType = "dvd"
-	BetaMax      MediaType = "betamax"
-	LaserDisc    MediaType = "laserdisc"
-)
-
-type Resolution string
-
-const (
-	UHD     Resolution = "uhd_4k"
-	HD1080p Resolution = "hd_1080p"
-	HD1080i Resolution = "hd_1080i"
-	HD720p  Resolution = "hd_720p"
-	SD480p  Resolution = "sd_480p"
-	SD480i  Resolution = "sd_480i"
-	SD576p  Resolution = "sd_576p"
-	SD576i  Resolution = "sd_576i"
-)
-
-type HDR string
-
-const (
-	DolbyVision HDR = "dolby_vision"
-	HDR10       HDR = "hdr10"
-	HDR10Plus   HDR = "hdr10_plus"
-	HLG         HDR = "hlg"
-)
-
-type Audio string
-
-const (
-	LPCM             Audio = "lpcm"
-	MP3              Audio = "mp3"
-	AAC              Audio = "acc"
-	OGG              Audio = "ogg"
-	WMA              Audio = "wma"
-	DTS              Audio = "dts"
-	DTSMA            Audio = "dts_ma"
-	DTSHR            Audio = "dts_hr"
-	DTSX             Audio = "dts_x"
-	Auro3D           Audio = "auro_3d"
-	DolbyDigital     Audio = "dolby_digital"
-	DolbyDigitalPlus Audio = "dolby_digital_plus"
-	DolbyAtmos       Audio = "dolby_atmos"
-	DolbyTrueHD      Audio = "dolby_truehd"
-	DolbyPrologic    Audio = "dolby_prologic"
-)
+	Type() Type
+	Show() (*CollectedShow, error)
+	Movie() (*CollectedMovie, error)
+}
 
 type CollectedMovie struct {
-	Movie       *Movie    `json:"movie"`
+	Movie `json:"movie"`
+
 	CollectedAt time.Time `json:"collected_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	Metadata    *Metadata `json:"metadata"`
 }
 
-type CollectionIterator interface {
-	BasicIterator
+type CollectedShow struct {
+	Show `json:"show"`
 
-	Type() Type
-	Show() *CollectedShow
-	Movie() *CollectedMovie
+	LastCollectedAt time.Time          `json:"last_collected_at"`
+	LastUpdatedAt   time.Time          `json:"last_updated_at"`
+	Seasons         []*CollectedSeason `json:"seasons"`
+}
+
+type numberedEntity struct {
+	Number int64 `json:"number"`
+}
+
+type CollectedSeason struct {
+	numberedEntity
+	Episodes []*CollectedEpisode
 }
 
 type CollectedEpisode struct {
-	Number      int64     `json:"number"`
+	numberedEntity
 	CollectedAt time.Time `json:"collected_at"`
 	Metadata    *Metadata `json:"metadata"`
 }
 
-type CollectedSeason struct {
-	Number   int64 `json:"number"`
-	Episodes []*CollectedEpisode
+type watchedDetails struct {
+	LastWatchedAt time.Time `json:"last_watched_at"`
+	LastUpdatedAt time.Time `json:"last_updated_at"`
+	Plays         int64     `json:"plays"`
 }
 
-type CollectedShow struct {
-	LastCollectedAt time.Time          `json:"last_collected_at"`
-	LastUpdatedAt   time.Time          `json:"last_updated_at"`
-	Show            *Show              `json:"show"`
-	Seasons         []*CollectedSeason `json:"seasons"`
+type WatchedIterator interface {
+	BasicIterator
+
+	Type() Type
+	Show() (*WatchedShow, error)
+	Movie() (*WatchedMovie, error)
 }
 
-type CollectedShowIterator struct{ BasicIterator }
+type WatchedMovie struct {
+	watchedDetails
+	Movie `json:"movie"`
+}
 
-func (c *CollectedShowIterator) CollectedShow() *CollectedShow { return c.Current().(*CollectedShow) }
+type WatchedShow struct {
+	watchedDetails
+	Show    `json:"show"`
+	ResetAt time.Time        `json:"reset_at"`
+	Seasons []*WatchedSeason `json:"seasons"`
+}
+
+type WatchedSeason struct {
+	numberedEntity
+	Episodes []*WatchedEpisode `json:"episodes"`
+}
+
+type WatchedEpisode struct {
+	numberedEntity
+	Plays         int64     `json:"plays"`
+	LastWatchedAt time.Time `json:"last_watched_at"`
+}
 
 type NotFound struct {
 	Movies   []*GenericElementParams `json:"movies"`
@@ -271,7 +472,84 @@ type AddToCollectionResult struct {
 	NotFound *NotFound  `json:"not_found"`
 }
 
+type AddToHistoryResult = AddToCollectionResult
+type AddRatingsResult = AddToCollectionResult
+type AddToWatchListResult = AddToCollectionResult
+
 type RemoveFromCollectionResult struct {
 	Deleted  *ChangeSet `json:"deleted"`
 	NotFound *NotFound  `json:"not_found"`
+}
+
+type RemoveFromWatchListResult = RemoveFromCollectionResult
+type RemoveRatingsResult = RemoveFromCollectionResult
+
+type History struct {
+	GenericMediaElement
+
+	ID        int64     `json:"id"`
+	Action    Action    `json:"action"`
+	WatchedAt time.Time `json:"watched_at"`
+}
+
+type HistoryIterator struct{ Iterator }
+
+func (h *HistoryIterator) History() (*History, error) {
+	rcv := &History{}
+	return rcv, h.Scan(rcv)
+}
+
+type RemoveFromHistoryResult struct {
+	RemoveFromCollectionResult
+	NotFound *struct {
+		NotFound
+		IDs []int64 `json:"ids"`
+	} `json:"not_found"`
+}
+
+type WatchListEntry struct {
+	GenericMediaElement
+	Season   *Season   `json:"season"`
+	Rank     int64     `json:"rank"`
+	ListedAt time.Time `json:"listed_at"`
+}
+
+type SortPreference struct {
+	Type      SortType
+	Direction SortDirection
+}
+
+type WatchListEntryIterator struct{ Iterator }
+
+func (w *WatchListEntryIterator) Entry() (*WatchListEntry, error) {
+	rcv := &WatchListEntry{}
+	return rcv, w.Scan(rcv)
+}
+
+// Applied attempts to retrieve the applied sort type on
+// a users watchlist.
+func (w *WatchListEntryIterator) Applied() *SortPreference {
+	h := w.headers()
+	if h == nil {
+		return nil
+	}
+
+	return &SortPreference{
+		Type:      SortType(h.Get("X-Applied-Sort-By")),
+		Direction: SortDirection(h.Get("X-Applied-Sort-How")),
+	}
+}
+
+// Preferred attempts to retrieve the preferred sort type on
+// a users watchlist.
+func (w *WatchListEntryIterator) Preferred() *SortPreference {
+	h := w.headers()
+	if h == nil {
+		return nil
+	}
+
+	return &SortPreference{
+		Type:      SortType(h.Get("X-Sort-By")),
+		Direction: SortDirection(h.Get("X-Sort-How")),
+	}
 }

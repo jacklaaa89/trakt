@@ -24,13 +24,13 @@ type BasicCalendarParams struct {
 }
 
 type CalendarShow struct {
-	Show       *Show     `json:"show"`
+	Show       `json:"show"`
 	Episode    *Episode  `json:"episode"`
 	FirstAired time.Time `json:"first_aired"`
 }
 
 type CalendarMovie struct {
-	Movie    *Movie    `json:"movie"`
+	Movie    `json:"movie"`
 	Released time.Time `json:"-"`
 }
 
@@ -54,8 +54,14 @@ func (c *CalendarMovie) UnmarshalJSON(bytes []byte) error {
 
 type CalendarShowIterator struct{ Iterator }
 
-func (li *CalendarShowIterator) Entry() *CalendarShow { return li.Current().(*CalendarShow) }
+func (li *CalendarShowIterator) Entry() (*CalendarShow, error) {
+	rcv := &CalendarShow{}
+	return rcv, li.Scan(rcv)
+}
 
 type CalendarMovieIterator struct{ Iterator }
 
-func (li *CommentIterator) Entry() *CalendarMovie { return li.Current().(*CalendarMovie) }
+func (li *CommentIterator) Entry() (*CalendarMovie, error) {
+	rcv := &CalendarMovie{}
+	return rcv, li.Scan(rcv)
+}

@@ -2,20 +2,21 @@ package trakt
 
 import (
 	"strconv"
+	"sync"
 	"time"
 )
 
 type Status string
 
 const (
-	ReturningSeries Status = `returning series`
-	InProduction    Status = `in production`
-	Planned         Status = `planned`
-	Cancelled       Status = `canceled`
-	Ended           Status = `ended`
-	PostProduction  Status = `post production`
-	Rumored         Status = `rumored`
-	Released        Status = `released`
+	StatusReturningSeries Status = `returning series`
+	StatusInProduction    Status = `in production`
+	StatusPlanned         Status = `planned`
+	StatusCancelled       Status = `canceled`
+	StatusEnded           Status = `ended`
+	StatusPostProduction  Status = `post production`
+	StatusRumored         Status = `rumored`
+	StatusReleased        Status = `released`
 )
 
 // ExtendedParams params which can be used when a request supports
@@ -95,6 +96,14 @@ type Type string
 
 func (t Type) String() string { return string(t) }
 
+// Plural returns the plural for a type.
+func (t Type) Plural() string {
+	if t == TypeAll {
+		return t.String()
+	}
+	return t.String() + "s"
+}
+
 const (
 	TypeMovie   Type = `movie`
 	TypeShow    Type = `show`
@@ -102,6 +111,7 @@ const (
 	TypeEpisode Type = `episode`
 	TypeList    Type = `list`
 	TypePerson  Type = `person`
+	TypeAll          = Type(All)
 )
 
 type SharingParams struct {
@@ -142,18 +152,68 @@ type GenericMediaElement struct {
 	Episode *Episode `json:"episode"`
 }
 
-type GenericMediaElementIterator struct{ Iterator }
+type GenericMediaElementIterator struct {
+	Iterator
 
-func (li *GenericMediaElementIterator) Type() Type {
-	return li.Current().(*GenericMediaElement).Type
+	mu         sync.RWMutex
+	currentPtr *GenericMediaElement
 }
 
-func (li *GenericMediaElementIterator) Show() *Show {
-	return li.Current().(*GenericMediaElement).Show
+// current helper function to capture the current pointer onto a value
+// stored on the iterator itself.
+// this is so we can have more helpful functions attached to the iterator
+// to get specific types.
+// we need to perform locking on this function as we are potentially concurrently
+// reading and writing to `currentPtr`.
+// typical iterators are already concurrent-safe, so this is only required as
+// we are performing additional functionality.
+func (li *GenericMediaElementIterator) current() (*GenericMediaElement, error) {
+	var ptr *GenericMediaElement
+	li.mu.Lock()
+	ptr = li.currentPtr
+	li.mu.Unlock()
+
+	if ptr != nil {
+		return ptr, nil
+	}
+
+	err := li.Scan(ptr)
+	if err != nil {
+		return nil, err
+	}
+
+	li.mu.Lock()
+	defer li.mu.Unlock()
+	li.currentPtr = ptr
+
+	return ptr, nil
 }
 
-func (li *GenericMediaElementIterator) Movie() *Movie {
-	return li.Current().(*GenericMediaElement).Movie
+func (li *GenericMediaElementIterator) Type() (Type, error) {
+	cur, err := li.current()
+	if err != nil {
+		return "", err
+	}
+
+	return cur.Type, nil
+}
+
+func (li *GenericMediaElementIterator) Show() (*Show, error) {
+	cur, err := li.current()
+	if err != nil {
+		return nil, err
+	}
+
+	return cur.Show, nil
+}
+
+func (li *GenericMediaElementIterator) Movie() (*Movie, error) {
+	cur, err := li.current()
+	if err != nil {
+		return nil, err
+	}
+
+	return cur.Movie, nil
 }
 
 type GenericElement struct {

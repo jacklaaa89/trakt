@@ -8,13 +8,13 @@ import (
 type ReleaseType string
 
 const (
-	Unknown    ReleaseType = "unknown"
-	Premiere   ReleaseType = "premiere"
-	Limited    ReleaseType = "limited"
-	Theatrical ReleaseType = "theatrical"
-	Digital    ReleaseType = "digital"
-	Physical   ReleaseType = "physical"
-	TV         ReleaseType = "tv"
+	ReleaseTypeUnknown    ReleaseType = "unknown"
+	ReleaseTypePremiere   ReleaseType = "premiere"
+	ReleaseTypeLimited    ReleaseType = "limited"
+	ReleaseTypeTheatrical ReleaseType = "theatrical"
+	ReleaseTypeDigital    ReleaseType = "digital"
+	ReleaseTypePhysical   ReleaseType = "physical"
+	ReleaseTypeTV         ReleaseType = "tv"
 )
 
 type TimePeriodListParams struct {
@@ -78,7 +78,10 @@ func (m *Movie) UnmarshalJSON(bytes []byte) error {
 
 type MovieIterator struct{ Iterator }
 
-func (m *MovieIterator) Movie() *Movie { return m.Current().(*Movie) }
+func (m *MovieIterator) Movie() (*Movie, error) {
+	rcv := &Movie{}
+	return rcv, m.Scan(rcv)
+}
 
 type Release struct {
 	Country       string      `json:"country"`
@@ -111,53 +114,67 @@ func (r *Release) UnmarshalJSON(bytes []byte) error {
 
 type ReleaseIterator struct{ BasicIterator }
 
-func (m *ReleaseIterator) Release() *Release { return m.Current().(*Release) }
+func (r *ReleaseIterator) Release() (*Release, error) {
+	rcv := &Release{}
+	return rcv, r.Scan(rcv)
+}
 
 type TrendingMovie struct {
-	Movie    *Movie `json:"movie"`
-	Watchers int64  `json:"watchers"`
+	Movie    `json:"movie"`
+	Watchers int64 `json:"watchers"`
 }
 
 type TrendingMovieIterator struct{ Iterator }
 
-func (m *TrendingMovieIterator) Trending() *TrendingMovie { return m.Current().(*TrendingMovie) }
+func (t *TrendingMovieIterator) Trending() (*TrendingMovie, error) {
+	rcv := &TrendingMovie{}
+	return rcv, t.Scan(rcv)
+}
 
 type RecentlyUpdatedMovie struct {
-	Movie     *Movie    `json:"movie"`
+	Movie     `json:"movie"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type RecentlyUpdatedMovieIterator struct{ Iterator }
 
-func (m *RecentlyUpdatedMovieIterator) Movie() *RecentlyUpdatedMovie {
-	return m.Current().(*RecentlyUpdatedMovie)
+func (m *RecentlyUpdatedMovieIterator) Movie() (*RecentlyUpdatedMovie, error) {
+	rcv := &RecentlyUpdatedMovie{}
+	return rcv, m.Scan(rcv)
 }
 
 type MovieWithStatistics struct {
 	statistics
-	Movie *Movie `json:"movie"`
+	Movie `json:"movie"`
 }
 
 type MovieWithStatisticsIterator struct{ Iterator }
 
-func (m *MovieWithStatisticsIterator) Movie() *MovieWithStatistics {
-	return m.Current().(*MovieWithStatistics)
+func (m *MovieWithStatisticsIterator) Movie() (*MovieWithStatistics, error) {
+	rcv := &MovieWithStatistics{}
+	return rcv, m.Scan(rcv)
 }
 
 type AnticipatedMovie struct {
-	ListCount int64  `json:"list_count"`
-	Movie     *Movie `json:"movie"`
+	ListCount int64 `json:"list_count"`
+	Movie     `json:"movie"`
 }
 
 type AnticipatedMovieIterator struct{ Iterator }
 
-func (m *AnticipatedMovieIterator) Movie() *AnticipatedMovie { return m.Current().(*AnticipatedMovie) }
+func (a *AnticipatedMovieIterator) Movie() (*AnticipatedMovie, error) {
+	rcv := &AnticipatedMovie{}
+	return rcv, a.Scan(rcv)
+}
 
 type BoxOfficeMovie struct {
-	Revenue int64  `json:"revenue"`
-	Movie   *Movie `json:"movie"`
+	Revenue int64 `json:"revenue"`
+	Movie   `json:"movie"`
 }
 
 type BoxOfficeMovieIterator struct{ BasicIterator }
 
-func (m *BoxOfficeMovieIterator) Movie() *BoxOfficeMovie { return m.Current().(*BoxOfficeMovie) }
+func (m *BoxOfficeMovieIterator) Movie() (*BoxOfficeMovie, error) {
+	rcv := &BoxOfficeMovie{}
+	return rcv, m.Scan(rcv)
+}

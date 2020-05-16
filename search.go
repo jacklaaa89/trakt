@@ -27,7 +27,7 @@ const (
 
 // TextQueryFilters represents the set of filters which can be applied
 // when performing a Text Lookup. this differs from the generic filter
-// set as we want to force Query to be given.
+// set as we want to force queryFunc to be given.
 type TextQueryFilters struct {
 	Years     []int64  `url:"years,comma,omitempty" json:"-"`
 	Genres    []string `url:"genres,comma,omitempty" json:"-"`
@@ -49,7 +49,7 @@ type SearchQueryParams struct {
 	Filters TextQueryFilters
 
 	Type     Type          `json:"-" url:"-"`
-	Query    string        `json:"-" url:"query"`
+	Query    string        `json:"-" url:"queryFunc"`
 	Fields   []SearchField `json:"-" url:"fields,comma,omitempty"`
 	Extended ExtendedType  `json:"-" url:"extended,omitempty"`
 }
@@ -73,4 +73,7 @@ type SearchResult struct {
 // return the current pointer as a concrete SearchResult struct.
 type SearchResultIterator struct{ Iterator }
 
-func (s *SearchResultIterator) Result() *SearchResult { return s.Current().(*SearchResult) }
+func (s *SearchResultIterator) Result() (*SearchResult, error) {
+	rcv := &SearchResult{}
+	return rcv, s.Scan(rcv)
+}

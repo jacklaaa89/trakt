@@ -46,9 +46,8 @@ func Lists(id trakt.SearchID, params *trakt.GetListParams) *trakt.ListIterator {
 }
 
 func (c *Client) Lists(id trakt.SearchID, params *trakt.GetListParams) *trakt.ListIterator {
-	rcv := make([]*trakt.List, 0)
 	path := trakt.FormatURLPath("people/%s/lists/%s/%s", id, params.ListType, params.SortType)
-	return &trakt.ListIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.ListIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

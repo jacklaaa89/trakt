@@ -7,4 +7,7 @@ type Genre struct {
 
 type GenreIterator struct{ BasicIterator }
 
-func (c *GenreIterator) Genre() *Genre { return c.Current().(*Genre) }
+func (c *GenreIterator) Genre() (*Genre, error) {
+	rcv := &Genre{}
+	return rcv, c.Scan(rcv)
+}

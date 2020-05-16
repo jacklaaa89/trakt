@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -25,10 +26,21 @@ const (
 	OAuthURL   string = "https://trakt.tv"
 )
 
-type iteratorFunc func(ListParamsContainer, Query) Iterator
+var (
+	// defaultCondition the default condition function, with never returns an error.
+	defaultCondition Condition = func() error { return nil }
+	// Key is the Trakt API key used globally in the binding.
+	Key string
+)
 
-// Key is the Stripe API key used globally in the binding.
-var Key string
+type (
+	// iteratorFunc is a function which is used to generate an iterator.
+	iteratorFunc func(ListParamsContainer, queryFunc, bool) Iterator
+	// Condition a function which can be set prior to attempting to retrieve a frame
+	// to determine if the arguments are valid. If the response of this function returns
+	// an error, then the error on the iterator is set to the error, and no more paging is performed.
+	Condition func() error
+)
 
 // NewClient generates a new client which all other clients should inherit from.
 func NewClient(b Backend) *BaseClient { return &BaseClient{B: b, Key: Key} }
@@ -45,28 +57,52 @@ type BaseClient struct {
 // newIterator helper function which performs all of the boilerplate code to generate an
 // iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
 // for each frame, rather than allocate a new rcv for each frame processed.
-func (b *BaseClient) NewIterator(method, path string, p ListParamsContainer, rcv interface{}) Iterator {
-	return b.newIteratorWithReceiver(newIterator, method, path, p, rcv)
+func (b *BaseClient) NewIterator(method, path string, p ListParamsContainer) Iterator {
+	return b.newIteratorWithReceiver(newIterator, method, path, p, defaultCondition, false)
+}
+
+// NewIteratorWithCondition helper function which performs all of the boilerplate code to generate an
+// iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
+// for each frame, rather than allocate a new rcv for each frame processed. if the supplied condition returns
+// an error on each times we attempt to retrieve a frame, then the error is set to the returned error and
+// no more paging is performed.
+func (b *BaseClient) NewIteratorWithCondition(method, path string, p ListParamsContainer, cnd Condition) Iterator {
+	return b.newIteratorWithReceiver(newIterator, method, path, p, cnd, false)
 }
 
 // newIterator helper function which performs all of the boilerplate code to generate an
 // iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
 // for each frame, rather than allocate a new rcv for each frame processed.
-func (b *BaseClient) NewSimulatedIterator(method, path string, p ListParamsContainer, rcv interface{}) Iterator {
-	return b.newIteratorWithReceiver(newSimulatedIterator, method, path, p, rcv)
+func (b *BaseClient) NewSimulatedIterator(method, path string, p ListParamsContainer) Iterator {
+	return b.newIteratorWithReceiver(newSimulatedIterator, method, path, p, defaultCondition, false)
+}
+
+// NewIteratorWithCondition helper function which performs all of the boilerplate code to generate an
+// iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
+// for each frame, rather than allocate a new rcv for each frame processed. if the supplied condition returns
+// an error on each times we attempt to retrieve a frame, then the error is set to the returned error and
+// no more paging is performed.
+func (b *BaseClient) NewSimulatedIteratorWithCondition(
+	method, path string, p ListParamsContainer, cnd Condition,
+) Iterator {
+	return b.newIteratorWithReceiver(newSimulatedIterator, method, path, p, cnd, false)
 }
 
 // newIteratorWithReceiver helper function which performs all of the boilerplate code to generate an
 // iterator. Using this method over generating an iterator is far more efficient, as we can re-use the rcv pointer
 // for each frame, rather than allocate a new rcv for each frame processed.
 func (b *BaseClient) newIteratorWithReceiver(
-	generator iteratorFunc, method, path string, p ListParamsContainer, rcv interface{},
+	generator iteratorFunc, method, path string, p ListParamsContainer, cnd Condition, lazyLoad bool,
 ) Iterator {
 	return generator(p, func(i ListParamsContainer) (iterationFrame, error) {
-		f := newEmptyFrame(rcv)
+		f := newEmptyFrame()
+		if cErr := cnd(); cErr != nil {
+			return f, cErr
+		}
+
 		err := b.B.CallWithFrame(method, path, b.Key, i, f)
 		return f, err
-	})
+	}, lazyLoad)
 }
 
 // Call helper function function which calls the underlined backend providing the assigned key.
@@ -136,18 +172,7 @@ func (s *BackendImplementation) CallWithFrame(method, path, key string, params P
 	if v == nil {
 		return errors.New(`frame data is required`)
 	}
-
-	rcv := v.rcv()
-	vo := reflect.ValueOf(rcv)
-	if !vo.IsValid() {
-		return errors.New(`frame receiver is invalid`)
-	}
-
-	if vo.Kind() != reflect.Ptr {
-		return errors.New(`frame receiver has to be a pointer`)
-	}
-
-	return s.callRaw(method, path, key, params, rcv, v)
+	return s.callRaw(method, path, key, params, v.rcv(), v)
 }
 
 func (s *BackendImplementation) Call(method, path, key string, params ParamsContainer, v interface{}) error {
@@ -181,6 +206,7 @@ func (s *BackendImplementation) callRaw(method, path, key string, params ParamsC
 		return err
 	}
 
+	// perform the request.
 	if err := s.do(req, bodyBuffer, params, v, h); err != nil {
 		return err
 	}
@@ -340,7 +366,7 @@ func (s *BackendImplementation) unmarshalJSONVerbose(res *http.Response, body []
 		bodySample = strings.Replace(bodySample, "\n", "\\n", -1)
 
 		newErr := fmt.Errorf(
-			"couldn't deserialize JSON (response status: %rcv, body sample: '%s'): %rcv",
+			"couldn't deserialize JSON (response status: %v, body sample: '%s'): %v",
 			res.StatusCode, bodySample, err,
 		)
 		s.LeveledLogger.Errorf("%s", newErr.Error())
@@ -357,22 +383,6 @@ func (s *BackendImplementation) unmarshalJSONVerbose(res *http.Response, body []
 		return err
 	}
 
-	// there may be rare instances where
-	// the actual receiver requires some metadata
-	// from the headers (while also the container is an iterator)
-	//
-	// so also check to see if the receiver implements it too
-	// if the container and receiver are not the same.
-	// as we dont want to potentially trigger an unmarshal on headers
-	// twice.
-	if con != nil {
-		err = unmarshalHeaders(res, rcv)
-		if err != nil {
-			s.LeveledLogger.Errorf("%s", err)
-			return err
-		}
-	}
-
 	return err
 }
 
@@ -381,7 +391,7 @@ func (s *BackendImplementation) unmarshalJSONVerbose(res *http.Response, body []
 func unmarshalHeaders(res *http.Response, i interface{}) error {
 	switch m := i.(type) {
 	case headerUnmarshaller:
-		return m.UnmarshalHeaders(res.Header)
+		return m.unmarshalHeaders(res.Header)
 	}
 	return nil
 }
@@ -538,18 +548,8 @@ func FormatURLPath(format string, params ...interface{}) string {
 	untypedParams := make([]interface{}, len(params))
 	var i int
 	for _, param := range params {
-		var formatted string
-		switch p := param.(type) {
-		case string:
-			formatted = p
-		case fmt.Stringer:
-			formatted = p.String()
-		case SearchID:
-			formatted = p.id()
-		case int, int8, int16, int32, int64,
-			uint, uint8, uint16, uint32, uint64:
-			formatted = fmt.Sprintf("%d", p)
-		default:
+		formatted, err := formatInterface(param)
+		if err != nil {
 			continue
 		}
 
@@ -558,6 +558,86 @@ func FormatURLPath(format string, params ...interface{}) string {
 	}
 
 	return fmt.Sprintf(format, untypedParams[:i]...)
+}
+
+// formatInterface attempts to format an interface into a string.
+func formatInterface(i interface{}) (string, error) {
+	if i == nil {
+		return "", nil
+	}
+
+	v := reflect.ValueOf(i)
+	if v.Kind() == reflect.Ptr {
+		return formatInterface(v.Elem().Interface())
+	}
+
+	// handle primitive types.
+	switch v.Kind() {
+	case reflect.Array, reflect.Slice:
+		return formatSlice(v.Interface()), nil
+	case reflect.Int, reflect.Int8, reflect.Int16,
+		reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(v.Int(), 10), nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16,
+		reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return strconv.FormatUint(v.Uint(), 10), nil
+	case reflect.Float32, reflect.Float64:
+		return strconv.FormatFloat(v.Float(), 'g', -1, 64), nil
+	case reflect.Complex64, reflect.Complex128:
+		c := v.Complex()
+		return strconv.FormatFloat(real(c), 'g', -1, 64) +
+			"+" + strconv.FormatFloat(imag(c), 'g', -1, 64) + "i", nil
+	case reflect.String:
+		return v.String(), nil
+	case reflect.Bool:
+		if v.Bool() {
+			return "true", nil
+		}
+		return "false", nil
+	}
+
+	// handle special types.
+	switch p := i.(type) {
+	case fmt.Stringer:
+		return p.String(), nil
+	case SearchID:
+		return p.id(), nil
+	default:
+		return "", errors.New("invalid interface type")
+	}
+}
+
+// formatSlice attempts to format a slice into a comma separated
+// joined string.
+func formatSlice(slice interface{}) string {
+	if slice == nil {
+		return ""
+	}
+
+	v := reflect.ValueOf(slice)
+
+	switch v.Kind() {
+	case reflect.Ptr:
+		return formatSlice(v.Elem().Interface())
+	case reflect.Slice, reflect.Array:
+		break
+	default:
+		return ""
+	}
+
+	stringSlice := make([]string, v.Len())
+	var idx int
+	for i := 0; i < v.Len(); i++ {
+		f := v.Index(i)
+		str, err := formatInterface(f.Interface())
+		if err != nil {
+			continue
+		}
+		stringSlice[idx] = str
+		idx++
+	}
+
+	return strings.Join(stringSlice[:idx], ",")
 }
 
 // GetBackend returns one of the library's supported backends based off of the
@@ -698,7 +778,7 @@ func (nopReadCloser) Close() error { return nil }
 // headerUnmarshaller interface which is used to inform the unmarshaller
 // that we need to unmarshal this type using the response headers.
 type headerUnmarshaller interface {
-	UnmarshalHeaders(h http.Header) error
+	unmarshalHeaders(h http.Header) error
 }
 
 var backendList backends

@@ -5,8 +5,8 @@ import "time"
 type ActivityType string
 
 const (
-	Aired   ActivityType = "aired"
-	Watched ActivityType = "watched"
+	ActivityTypeAired   ActivityType = "aired"
+	ActivityTypeWatched ActivityType = "watched"
 )
 
 type ProgressParams struct {

@@ -7,4 +7,7 @@ type Language struct {
 
 type LanguageIterator struct{ BasicIterator }
 
-func (c *LanguageIterator) Language() *Language { return c.Current().(*Language) }
+func (c *LanguageIterator) Language() (*Language, error) {
+	rcv := &Language{}
+	return rcv, c.Scan(rcv)
+}

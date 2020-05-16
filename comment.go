@@ -9,10 +9,10 @@ import (
 type CommentType string
 
 const (
-	Unspecified    CommentType = `unspecified`
-	Review         CommentType = `review`
-	Shout          CommentType = `shout`
-	CommentTypeAll             = CommentType(All)
+	CommentTypeUnspecified CommentType = `unspecified`
+	CommentTypeReview      CommentType = `review`
+	CommentTypeShout       CommentType = `shout`
+	CommentTypeAll                     = CommentType(All)
 )
 
 type PostCommentParams struct {
@@ -73,26 +73,31 @@ type Comment struct {
 
 type CommentIterator struct{ Iterator }
 
-func (li *CommentIterator) Comment() *Comment { return li.Current().(*Comment) }
+func (li *CommentIterator) Comment() (*Comment, error) {
+	rcv := &Comment{}
+	return rcv, li.Scan(rcv)
+}
 
 type UserLike struct {
-	User    *User     `json:"user"`
+	User    `json:"user"`
 	LikedAt time.Time `json:"liked_at"`
 }
 
 type UserLikeIterator struct{ Iterator }
 
-func (li *UserLikeIterator) UserLike() *UserLike { return li.Current().(*UserLike) }
+func (li *UserLikeIterator) UserLike() (*UserLike, error) {
+	rcv := &UserLike{}
+	return rcv, li.Scan(rcv)
+}
 
 type CommentWithMediaElement struct {
 	GenericMediaElement
 	Comment *Comment `json:"comment"`
 }
 
-type CommentWithMediaElementIterator struct {
-	GenericMediaElementIterator
-}
+type CommentWithMediaElementIterator struct{ Iterator }
 
-func (li *UserLikeIterator) CommentW() *Comment {
-	return li.Current().(*CommentWithMediaElement).Comment
+func (li *CommentWithMediaElementIterator) CommentWithMediaElement() (*CommentWithMediaElement, error) {
+	rcv := &CommentWithMediaElement{}
+	return rcv, li.Scan(rcv)
 }

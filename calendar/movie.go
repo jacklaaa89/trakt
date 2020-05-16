@@ -30,6 +30,5 @@ func (c *Client) movies(mediaType string, params *trakt.BasicCalendarParams) *tr
 }
 
 func (c *Client) generateMovieIterator(path string, params *wrappedBasicCalendarParams) *trakt.CalendarMovieIterator {
-	list := make([]*trakt.CalendarMovie, 0)
-	return &trakt.CalendarMovieIterator{Iterator: c.b.NewIterator(http.MethodGet, formatPath(path, params), params, &list)}
+	return &trakt.CalendarMovieIterator{Iterator: c.b.NewIterator(http.MethodGet, formatPath(path, params), params)}
 }

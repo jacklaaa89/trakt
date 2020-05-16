@@ -25,9 +25,8 @@ func (c *Client) Popular(params *trakt.BasicListParams) *trakt.RecentListIterato
 }
 
 func (c *Client) generateListIterator(action string, params *trakt.BasicListParams) *trakt.RecentListIterator {
-	ll := make([]*trakt.RecentList, 0)
 	path := trakt.FormatURLPath("/lists/%s", action)
-	return &trakt.RecentListIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &ll)}
+	return &trakt.RecentListIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

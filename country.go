@@ -7,4 +7,7 @@ type Country struct {
 
 type CountryIterator struct{ BasicIterator }
 
-func (c *CountryIterator) Country() *Country { return c.Current().(*Country) }
+func (c *CountryIterator) Country() (*Country, error) {
+	rcv := &Country{}
+	return rcv, c.Scan(rcv)
+}

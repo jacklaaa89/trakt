@@ -13,10 +13,7 @@ func Movies(params *trakt.RecommendationListParams) *trakt.MovieIterator {
 }
 
 func (c *Client) Movies(params *trakt.RecommendationListParams) *trakt.MovieIterator {
-	l := make([]*trakt.Movie, 0)
-	return &trakt.MovieIterator{
-		Iterator: c.b.NewIterator(http.MethodGet, "/recommendations/movies", params, &l),
-	}
+	return &trakt.MovieIterator{Iterator: c.b.NewIterator(http.MethodGet, "/recommendations/movies", params)}
 }
 
 func Shows(params *trakt.RecommendationListParams) *trakt.ShowIterator {
@@ -24,10 +21,7 @@ func Shows(params *trakt.RecommendationListParams) *trakt.ShowIterator {
 }
 
 func (c *Client) Shows(params *trakt.RecommendationListParams) *trakt.ShowIterator {
-	l := make([]*trakt.Show, 0)
-	return &trakt.ShowIterator{
-		Iterator: c.b.NewIterator(http.MethodGet, "/recommendations/shows", params, &l),
-	}
+	return &trakt.ShowIterator{Iterator: c.b.NewIterator(http.MethodGet, "/recommendations/shows", params)}
 }
 
 func HideShow(id trakt.SearchID, params *trakt.Params) error {

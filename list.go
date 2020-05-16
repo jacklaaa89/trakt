@@ -7,8 +7,8 @@ type Privacy string
 func (p Privacy) String() string { return string(p) }
 
 const (
-	Private Privacy = "private"
-	Public  Privacy = "public"
+	PrivacyPrivate Privacy = "private"
+	PrivacyPublic  Privacy = "public"
 )
 
 type ListType string
@@ -16,10 +16,10 @@ type ListType string
 func (l ListType) String() string { return string(l) }
 
 const (
-	ListTypeAll          = ListType(All)
-	Personal    ListType = "personal"
-	Official    ListType = "official"
-	Watchlist   ListType = "watchlists"
+	ListTypeAll                = ListType(All)
+	ListTypePersonal  ListType = "personal"
+	ListTypeOfficial  ListType = "official"
+	ListTypeWatchlist ListType = "watchlists"
 )
 
 type GetListParams struct {
@@ -48,18 +48,24 @@ type List struct {
 
 type ListIterator struct{ Iterator }
 
-func (r *ListIterator) List() *List { return r.Current().(*List) }
+func (l *ListIterator) List() (*List, error) {
+	rcv := &List{}
+	return rcv, l.Scan(rcv)
+}
 
 // RecentList represents a list with the most
 // recent like and comment figures, usually over the last
 // 7 days. The like and comment counts on the list are for
 // all time.
 type RecentList struct {
-	List     *List `json:"list"`
+	List     `json:"list"`
 	Likes    int64 `json:"like_count"`
 	Comments int64 `json:"comment_count"`
 }
 
 type RecentListIterator struct{ Iterator }
 
-func (r *RecentListIterator) RecentList() *RecentList { return r.Current().(*RecentList) }
+func (r *RecentListIterator) RecentList() (*RecentList, error) {
+	rcv := &RecentList{}
+	return rcv, r.Scan(rcv)
+}

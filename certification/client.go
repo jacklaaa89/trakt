@@ -13,9 +13,8 @@ func List(params *trakt.ListByTypeParams) *trakt.CertificationIterator {
 }
 
 func (c *Client) List(params *trakt.ListByTypeParams) *trakt.CertificationIterator {
-	gl := make([]*trakt.Certification, 0)
 	path := trakt.FormatURLPath("/certifications/%s", params.Type)
-	return &trakt.CertificationIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &gl)}
+	return &trakt.CertificationIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params)}
 }
 
 func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

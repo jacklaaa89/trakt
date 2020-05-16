@@ -18,4 +18,7 @@ type Season struct {
 
 type SeasonIterator struct{ Iterator }
 
-func (s *SeasonIterator) Season() *Season { return s.Current().(*Season) }
+func (s *SeasonIterator) Season() (*Season, error) {
+	rcv := &Season{}
+	return rcv, s.Scan(rcv)
+}

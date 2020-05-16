@@ -7,4 +7,7 @@ type Alias struct {
 
 type AliasIterator struct{ BasicIterator }
 
-func (a *AliasIterator) Alias() *Alias { return a.Current().(*Alias) }
+func (a *AliasIterator) Alias() (*Alias, error) {
+	rcv := &Alias{}
+	return rcv, a.Scan(rcv)
+}

@@ -13,9 +13,8 @@ func List(params *trakt.ListByTypeParams) *trakt.LanguageIterator {
 }
 
 func (c *Client) List(params *trakt.ListByTypeParams) *trakt.LanguageIterator {
-	rcv := make([]*trakt.Language, 0)
 	path := trakt.FormatURLPath("/languages/%s", params.Type)
-	return &trakt.LanguageIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.LanguageIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params)}
 }
 
 func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }

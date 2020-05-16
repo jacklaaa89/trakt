@@ -19,7 +19,10 @@ type Episode struct {
 
 type EpisodeIterator struct{ Iterator }
 
-func (e *EpisodeIterator) Episode() *Episode { return e.Current().(*Episode) }
+func (e *EpisodeIterator) Episode() (*Episode, error) {
+	rcv := &Episode{}
+	return rcv, e.Scan(rcv)
+}
 
 type EpisodeWithTranslations struct {
 	Episode
@@ -28,6 +31,7 @@ type EpisodeWithTranslations struct {
 
 type EpisodeWithTranslationsIterator struct{ BasicIterator }
 
-func (e *EpisodeWithTranslationsIterator) Episode() *EpisodeWithTranslations {
-	return e.Current().(*EpisodeWithTranslations)
+func (e *EpisodeWithTranslationsIterator) Episode() (*EpisodeWithTranslations, error) {
+	rcv := &EpisodeWithTranslations{}
+	return rcv, e.Scan(rcv)
 }

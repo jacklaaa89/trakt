@@ -13,8 +13,7 @@ func Trending(params *trakt.FilterListParams) *trakt.TrendingShowIterator {
 }
 
 func (c *Client) Trending(params *trakt.FilterListParams) *trakt.TrendingShowIterator {
-	tml := make([]*trakt.TrendingShow, 0)
-	return &trakt.TrendingShowIterator{Iterator: c.b.NewIterator(http.MethodGet, "/shows/trending", params, &tml)}
+	return &trakt.TrendingShowIterator{Iterator: c.b.NewIterator(http.MethodGet, "/shows/trending", params)}
 }
 
 func Popular(params *trakt.FilterListParams) *trakt.ShowIterator {
@@ -22,8 +21,7 @@ func Popular(params *trakt.FilterListParams) *trakt.ShowIterator {
 }
 
 func (c *Client) Popular(params *trakt.FilterListParams) *trakt.ShowIterator {
-	rcv := make([]*trakt.Show, 0)
-	return &trakt.ShowIterator{Iterator: c.b.NewIterator(http.MethodGet, "/shows/popular", params, &rcv)}
+	return &trakt.ShowIterator{Iterator: c.b.NewIterator(http.MethodGet, "/shows/popular", params)}
 }
 
 func Played(params *trakt.TimePeriodListParams) *trakt.ShowWithStatisticsIterator {
@@ -55,8 +53,7 @@ func Anticipated(params *trakt.FilterListParams) *trakt.AnticipatedShowIterator 
 }
 
 func (c *Client) Anticipated(params *trakt.FilterListParams) *trakt.AnticipatedShowIterator {
-	rcv := make([]*trakt.AnticipatedShow, 0)
-	return &trakt.AnticipatedShowIterator{Iterator: c.b.NewIterator(http.MethodGet, "/shows/anticipated", params, &rcv)}
+	return &trakt.AnticipatedShowIterator{Iterator: c.b.NewIterator(http.MethodGet, "/shows/anticipated", params)}
 }
 
 func RecentlyUpdated(params *trakt.RecentlyUpdatedListParams) *trakt.RecentlyUpdatedShowIterator {
@@ -64,9 +61,8 @@ func RecentlyUpdated(params *trakt.RecentlyUpdatedListParams) *trakt.RecentlyUpd
 }
 
 func (c *Client) RecentlyUpdated(params *trakt.RecentlyUpdatedListParams) *trakt.RecentlyUpdatedShowIterator {
-	rcv := make([]*trakt.RecentlyUpdatedShow, 0)
 	path := trakt.FormatURLPath("/shows/updates/%s", params.StartDate.Format(`2006-01-02`))
-	return &trakt.RecentlyUpdatedShowIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.RecentlyUpdatedShowIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func Get(id trakt.SearchID, params *trakt.ExtendedParams) (*trakt.Show, error) {
@@ -85,9 +81,8 @@ func Aliases(id trakt.SearchID, params *trakt.BasicParams) *trakt.AliasIterator 
 }
 
 func (c *Client) Aliases(id trakt.SearchID, params *trakt.BasicParams) *trakt.AliasIterator {
-	rcv := make([]*trakt.Alias, 0)
 	path := trakt.FormatURLPath("shows/%s/aliases", id)
-	return &trakt.AliasIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.AliasIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params)}
 }
 
 func Certifications(id trakt.SearchID, params *trakt.BasicParams) *trakt.CertificationIterator {
@@ -95,9 +90,8 @@ func Certifications(id trakt.SearchID, params *trakt.BasicParams) *trakt.Certifi
 }
 
 func (c *Client) Certifications(id trakt.SearchID, params *trakt.BasicParams) *trakt.CertificationIterator {
-	rcv := make([]*trakt.Certification, 0)
 	path := trakt.FormatURLPath("shows/%s/certifications", id)
-	return &trakt.CertificationIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.CertificationIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params)}
 }
 
 func Translations(id trakt.SearchID, params *trakt.TranslationListParams) *trakt.TranslationIterator {
@@ -105,9 +99,8 @@ func Translations(id trakt.SearchID, params *trakt.TranslationListParams) *trakt
 }
 
 func (c *Client) Translations(id trakt.SearchID, params *trakt.TranslationListParams) *trakt.TranslationIterator {
-	rcv := make([]*trakt.Translation, 0)
 	path := trakt.FormatURLPath("shows/%s/translations/%s", id, params.Language)
-	return &trakt.TranslationIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.TranslationIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params)}
 }
 
 func Comments(id trakt.SearchID, params *trakt.CommentListParams) *trakt.CommentIterator {
@@ -115,9 +108,8 @@ func Comments(id trakt.SearchID, params *trakt.CommentListParams) *trakt.Comment
 }
 
 func (c *Client) Comments(id trakt.SearchID, params *trakt.CommentListParams) *trakt.CommentIterator {
-	rcv := make([]*trakt.Comment, 0)
 	path := trakt.FormatURLPath("shows/%s/comments/%s", id, params.Sort)
-	return &trakt.CommentIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.CommentIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func Lists(id trakt.SearchID, params *trakt.GetListParams) *trakt.ListIterator {
@@ -125,9 +117,8 @@ func Lists(id trakt.SearchID, params *trakt.GetListParams) *trakt.ListIterator {
 }
 
 func (c *Client) Lists(id trakt.SearchID, params *trakt.GetListParams) *trakt.ListIterator {
-	rcv := make([]*trakt.List, 0)
 	path := trakt.FormatURLPath("shows/%s/lists/%s/%s", id, params.ListType, params.SortType)
-	return &trakt.ListIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.ListIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func CollectionProgress(id trakt.SearchID, params *trakt.ProgressParams) (*trakt.CollectedProgress, error) {
@@ -163,13 +154,13 @@ func (c *Client) People(id trakt.SearchID, params *trakt.ExtendedParams) (*trakt
 	return cc, err
 }
 
-func Ratings(id trakt.SearchID, params *trakt.BasicParams) (*trakt.Rating, error) {
+func Ratings(id trakt.SearchID, params *trakt.BasicParams) (*trakt.RatingDistribution, error) {
 	return getC().Ratings(id, params)
 }
 
-func (c *Client) Ratings(id trakt.SearchID, params *trakt.BasicParams) (*trakt.Rating, error) {
+func (c *Client) Ratings(id trakt.SearchID, params *trakt.BasicParams) (*trakt.RatingDistribution, error) {
 	path := trakt.FormatURLPath("/shows/%s/ratings", id)
-	stats := &trakt.Rating{}
+	stats := &trakt.RatingDistribution{}
 	err := c.b.Call(http.MethodGet, path, params, stats)
 	return stats, err
 }
@@ -190,9 +181,8 @@ func WatchingNow(id trakt.SearchID, params *trakt.BasicListParams) *trakt.UserIt
 }
 
 func (c *Client) WatchingNow(id trakt.SearchID, params *trakt.BasicListParams) *trakt.UserIterator {
-	rcv := make([]*trakt.User, 0)
 	path := trakt.FormatURLPath("shows/%s/watching", id)
-	return &trakt.UserIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.UserIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func NextEpisode(id trakt.SearchID, params *trakt.ExtendedParams) (*trakt.Episode, error) {
@@ -222,9 +212,8 @@ func Seasons(id trakt.SearchID, params *trakt.BasicListParams) *trakt.SeasonIter
 }
 
 func (c *Client) Seasons(id trakt.SearchID, params *trakt.BasicListParams) *trakt.SeasonIterator {
-	rcv := make([]*trakt.Season, 0)
 	path := trakt.FormatURLPath("shows/%s/seasons", id)
-	return &trakt.SeasonIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.SeasonIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func (c *Client) newTimePeriodIterator(action string, p *trakt.TimePeriodListParams) *trakt.ShowWithStatisticsIterator {
@@ -232,9 +221,8 @@ func (c *Client) newTimePeriodIterator(action string, p *trakt.TimePeriodListPar
 	if p.Period != "" {
 		period = p.Period
 	}
-	rcv := make([]*trakt.ShowWithStatistics, 0)
 	path := trakt.FormatURLPath("/shows/%s/%s", action, period)
-	return &trakt.ShowWithStatisticsIterator{Iterator: c.b.NewIterator(http.MethodGet, path, p, &rcv)}
+	return &trakt.ShowWithStatisticsIterator{Iterator: c.b.NewIterator(http.MethodGet, path, p)}
 }
 
 // handleNoEpisodeFound helper function to handle if the response was a success but no episode was found

@@ -26,44 +26,55 @@ type Show struct {
 
 type ShowIterator struct{ Iterator }
 
-func (li *ShowIterator) Show() *Show { return li.Current().(*Show) }
+func (s *ShowIterator) Show() (*Show, error) {
+	rcv := &Show{}
+	return rcv, s.Scan(rcv)
+}
 
 type TrendingShow struct {
-	Show     *Show `json:"show"`
+	Show     `json:"show"`
 	Watchers int64 `json:"watchers"`
 }
 
 type TrendingShowIterator struct{ Iterator }
 
-func (m *TrendingShowIterator) Trending() *TrendingShow { return m.Current().(*TrendingShow) }
+func (t *TrendingShowIterator) Trending() (*TrendingShow, error) {
+	rcv := &TrendingShow{}
+	return rcv, t.Scan(rcv)
+}
 
 type RecentlyUpdatedShow struct {
-	Show      *Show     `json:"show"`
+	Show      `json:"show"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type RecentlyUpdatedShowIterator struct{ Iterator }
 
-func (m *RecentlyUpdatedShowIterator) Show() *RecentlyUpdatedShow {
-	return m.Current().(*RecentlyUpdatedShow)
+func (r *RecentlyUpdatedShowIterator) Show() (*RecentlyUpdatedShow, error) {
+	rcv := &RecentlyUpdatedShow{}
+	return rcv, r.Scan(rcv)
 }
 
 type ShowWithStatistics struct {
 	statistics
-	Show *Show `json:"movie"`
+	Show `json:"show"`
 }
 
 type ShowWithStatisticsIterator struct{ Iterator }
 
-func (m *ShowWithStatisticsIterator) Show() *ShowWithStatistics {
-	return m.Current().(*ShowWithStatistics)
+func (s *ShowWithStatisticsIterator) Show() (*ShowWithStatistics, error) {
+	rcv := &ShowWithStatistics{}
+	return rcv, s.Scan(rcv)
 }
 
 type AnticipatedShow struct {
-	ListCount int64  `json:"list_count"`
-	Movie     *Movie `json:"movie"`
+	Show      `json:"show"`
+	ListCount int64 `json:"list_count"`
 }
 
 type AnticipatedShowIterator struct{ Iterator }
 
-func (m *AnticipatedMovieIterator) Show() *AnticipatedShow { return m.Current().(*AnticipatedShow) }
+func (a *AnticipatedShowIterator) Show() (*AnticipatedShow, error) {
+	rcv := &AnticipatedShow{}
+	return rcv, a.Scan(rcv)
+}

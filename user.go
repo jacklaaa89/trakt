@@ -8,8 +8,8 @@ import (
 type Gender string
 
 const (
-	Male   Gender = `male`
-	Female Gender = `female`
+	GenderMale   Gender = `male`
+	GenderFemale Gender = `female`
 )
 
 type VipStatus struct {
@@ -63,4 +63,7 @@ func (u *User) UnmarshalJSON(bytes []byte) error {
 
 type UserIterator struct{ Iterator }
 
-func (li *UserIterator) User() *User { return li.Current().(*User) }
+func (u *UserIterator) User() (*User, error) {
+	rcv := &User{}
+	return rcv, u.Scan(rcv)
+}

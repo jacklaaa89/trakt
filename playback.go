@@ -29,4 +29,7 @@ type Playback struct {
 
 type PlaybackIterator struct{ BasicIterator }
 
-func (p *PlaybackIterator) Playback() *Playback { return p.Current().(*Playback) }
+func (p *PlaybackIterator) Playback() (*Playback, error) {
+	rcv := &Playback{}
+	return rcv, p.Scan(rcv)
+}

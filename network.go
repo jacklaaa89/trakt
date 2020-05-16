@@ -6,4 +6,7 @@ type Network struct {
 
 type NetworkIterator struct{ BasicIterator }
 
-func (n *NetworkIterator) Network() *Network { return n.Current().(*Network) }
+func (n *NetworkIterator) Network() (*Network, error) {
+	rcv := &Network{}
+	return rcv, n.Scan(rcv)
+}

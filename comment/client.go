@@ -29,9 +29,8 @@ func Likes(id int64, params *trakt.BasicListParams) *trakt.UserLikeIterator {
 
 // Likes generates an iterator to retrieve the users which liked a comment by id.
 func (c *Client) Likes(id int64, params *trakt.BasicListParams) *trakt.UserLikeIterator {
-	list := make([]*trakt.UserLike, 0)
 	path := trakt.FormatURLPath("/comments/%s/likes", id)
-	return &trakt.UserLikeIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &list)}
+	return &trakt.UserLikeIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 // Replies retrieves a list of replies attached to a comment by id.
@@ -41,9 +40,8 @@ func Replies(id int64, params *trakt.ListParams) *trakt.CommentIterator {
 
 // Replies retrieves a list of replies attached to a comment by id.
 func (c *Client) Replies(id int64, params *trakt.ListParams) *trakt.CommentIterator {
-	list := make([]*trakt.Comment, 0)
 	path := trakt.FormatURLPath("/comments/%s/replies", id)
-	return &trakt.CommentIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &list)}
+	return &trakt.CommentIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 // Item attempts to retrieve the item associated with a comment.
@@ -216,8 +214,6 @@ func commentErrorHandler(statusCode int) trakt.ErrorCode {
 // - Updates
 // as the only thing that changes is the action that is called in terms of arguments.
 func (c *Client) generateIterator(action string, params *trakt.TrendingCommentParams) *trakt.CommentWithMediaElementIterator {
-	list := make([]*trakt.CommentWithMediaElement, 0)
-
 	var ct, mt = trakt.All, trakt.All
 	if params.MediaType != "" {
 		mt = string(params.MediaType)
@@ -229,9 +225,7 @@ func (c *Client) generateIterator(action string, params *trakt.TrendingCommentPa
 	path := trakt.FormatURLPath("/comments/%s/%s/%s", action, ct, mt)
 
 	return &trakt.CommentWithMediaElementIterator{
-		GenericMediaElementIterator: trakt.GenericMediaElementIterator{
-			Iterator: c.b.NewIterator(http.MethodGet, path, params, &list),
-		},
+		Iterator: c.b.NewIterator(http.MethodGet, path, params),
 	}
 }
 

@@ -15,4 +15,7 @@ type Translation struct {
 
 type TranslationIterator struct{ BasicIterator }
 
-func (m *TranslationIterator) Translation() *Translation { return m.Current().(*Translation) }
+func (t *TranslationIterator) Translation() (*Translation, error) {
+	rcv := &Translation{}
+	return rcv, t.Scan(rcv)
+}

@@ -8,17 +8,17 @@ import (
 type Department string
 
 const (
-	Production       Department = "production"
-	Art              Department = "art"
-	Crew             Department = "crew"
-	CostumeAndMakeUp Department = "costume & make-up"
-	Directing        Department = "directing"
-	Writing          Department = "writing"
-	Sound            Department = "sound"
-	Camera           Department = "camera"
-	VisualEffects    Department = "visual effects"
-	Lighting         Department = "lighting"
-	Editing          Department = "editing"
+	DepartmentProduction       Department = "production"
+	DepartmentArt              Department = "art"
+	DepartmentCrew             Department = "crew"
+	DepartmentCostumeAndMakeUp Department = "costume & make-up"
+	DepartmentDirecting        Department = "directing"
+	DepartmentWriting          Department = "writing"
+	DepartmentSound            Department = "sound"
+	DepartmentCamera           Department = "camera"
+	DepartmentVisualEffects    Department = "visual effects"
+	DepartmentLighting         Department = "lighting"
+	DepartmentEditing          Department = "editing"
 )
 
 type Person struct {
@@ -68,13 +68,13 @@ func (p *Person) UnmarshalJSON(bytes []byte) error {
 type CastEntry struct {
 	Characters []string `json:"characters"`
 	Episodes   *int64   `json:"episode_count"`
-	Person     *Person  `json:"person"`
+	Person     `json:"person"`
 }
 
 type CrewEntry struct {
 	Jobs     []string `json:"jobs"`
 	Episodes *int64   `json:"episode_count"`
-	Person   *Person  `json:"person"`
+	Person   `json:"person"`
 }
 
 type CastAndCrew struct {

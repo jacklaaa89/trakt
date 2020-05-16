@@ -80,9 +80,8 @@ func (c *Client) seasonPremieres(action string, params calendarParams) *trakt.Ca
 }
 
 func (c *Client) generateShowIterator(path string, params calendarParams) *trakt.CalendarShowIterator {
-	list := make([]*trakt.CalendarShow, 0)
 	return &trakt.CalendarShowIterator{
-		Iterator: c.b.NewIterator(http.MethodGet, formatPath(path, params), params.elem(), &list),
+		Iterator: c.b.NewIterator(http.MethodGet, formatPath(path, params), params.elem()),
 	}
 }
 

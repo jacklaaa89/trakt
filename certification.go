@@ -8,4 +8,7 @@ type Certification struct {
 
 type CertificationIterator struct{ BasicIterator }
 
-func (c *CertificationIterator) Certification() *Certification { return c.Current().(*Certification) }
+func (c *CertificationIterator) Certification() (*Certification, error) {
+	rcv := &Certification{}
+	return rcv, c.Scan(rcv)
+}

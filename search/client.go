@@ -15,9 +15,8 @@ func TextQuery(params *trakt.SearchQueryParams) *trakt.SearchResultIterator {
 // TextQuery performs a search using a textual based query.
 // the query can be restricted to certain search fields by providing the Fields parameter.
 func (c *Client) TextQuery(params *trakt.SearchQueryParams) *trakt.SearchResultIterator {
-	rcv := make([]*trakt.SearchResult, 0)
 	path := trakt.FormatURLPath("/search/%s", params.Type)
-	return &trakt.SearchResultIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.SearchResultIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func IDLookup(id trakt.SearchID, params *trakt.IDLookupParams) *trakt.SearchResultIterator {
@@ -25,9 +24,8 @@ func IDLookup(id trakt.SearchID, params *trakt.IDLookupParams) *trakt.SearchResu
 }
 
 func (c *Client) IDLookup(id trakt.SearchID, params *trakt.IDLookupParams) *trakt.SearchResultIterator {
-	rcv := make([]*trakt.SearchResult, 0)
 	path := trakt.FormatURLPath(trakt.IDPath(id), id)
-	return &trakt.SearchResultIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params, &rcv)}
+	return &trakt.SearchResultIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
 func getC() *Client { return &Client{trakt.NewClient(trakt.GetBackend())} }
