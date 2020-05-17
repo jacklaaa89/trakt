@@ -1,3 +1,4 @@
+// Package country gives functions to retrieve country information.
 package country
 
 import (
@@ -6,15 +7,33 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
+// Client the country client.
 type Client struct{ b trakt.BaseClient }
 
+// List retrieves a list of all countries, including names and codes. Only TypeMovie and TypeShow are supported.
 func List(params *trakt.ListByTypeParams) *trakt.CountryIterator {
 	return getC().List(params)
 }
 
+// List retrieves a list of all countries, including names and codes. Only TypeMovie and TypeShow are supported.
 func (c *Client) List(params *trakt.ListByTypeParams) *trakt.CountryIterator {
-	path := trakt.FormatURLPath("/countries/%s", params.Type)
-	return &trakt.CountryIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params)}
+	path := trakt.FormatURLPath("/countries/%s", params.Type.Plural())
+	return &trakt.CountryIterator{
+		BasicIterator: c.b.NewSimulatedIteratorWithCondition(http.MethodGet, path, params, func() error {
+			switch params.Type {
+			case trakt.TypeMovie, trakt.TypeShow:
+				return nil
+			}
+
+			return &trakt.Error{
+				HTTPStatusCode: http.StatusUnprocessableEntity,
+				Body:           "invalid type: only movie / show are applicable",
+				Resource:       path,
+				Code:           trakt.ErrorCodeValidationError,
+			}
+		}),
+	}
 }
 
+// getC retrieves an instance of a country client.
 func getC() *Client { return &Client{trakt.NewClient()} }

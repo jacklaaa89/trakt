@@ -15,14 +15,26 @@ const (
 	CommentTypeAll                     = CommentType(All)
 )
 
+// PostCommentParams parameters in order to post a new comment.
 type PostCommentParams struct {
 	Params
 
-	Type    Type                  `json:"-"`
+	// Type the type of media element. Can either be TypeMovie or TypeEpisode.
+	Type Type `json:"-"`
+	// Element the actual element data. We can provide as much or as little as
+	// we want about the item. The recommended values are either the trakt ID or slug.
 	Element *GenericElementParams `json:"-"`
 
-	Text    string         `json:"comment"`
-	Spoiler bool           `json:"spoiler"`
+	// Text for the comment. This supports markdown and emojis.
+	// Emojis are declared as short codes like :smiley: and :raised_hands:.
+	Text string `json:"comment"`
+	// Spoiler represents whether the comment is a spoiler to the attached item.
+	Spoiler bool `json:"spoiler"`
+
+	// The sharing object is optional and will apply the user's settings if not sent.
+	// If sharing is sent, each key will override the user's setting for that social network.
+	// Send true to post or false to not post on the indicated social network. You can see which
+	// social networks a user has connected with the /users/settings method.
 	Sharing *SharingParams `json:"sharing,omitempty"`
 }
 

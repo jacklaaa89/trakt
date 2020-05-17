@@ -6,18 +6,36 @@ import (
 	"time"
 )
 
+// StartCheckinParams parameters in order to start a checkin
+// operation. The only required values are Type, Element and an
+// OAuth token.
 type StartCheckinParams struct {
 	Params
 
-	Type    Type                  `json:"-"`
+	// Type the type of media element. Can either be TypeMovie or TypeEpisode.
+	Type Type `json:"-"`
+	// Element the actual element data. We can provide as much or as little as
+	// we want about the item. The recommended values are either the trakt ID or slug.
 	Element *GenericElementParams `json:"-"`
 
-	Message    string         `json:"message,omitempty"`
-	VenueID    string         `json:"venue_id,omitempty"`
-	VenueName  string         `json:"venue_name,omitempty"`
-	Sharing    *SharingParams `json:"sharing,omitempty"`
-	AppVersion string         `json:"app_version,omitempty"`
-	AppDate    string         `json:"app_date,omitempty"`
+	// Message used for sharing. If not sent, it will use the watching string in the user settings.
+	Message string `json:"message,omitempty"`
+
+	// Foursquare venue ID. Optional.
+	VenueID string `json:"venue_id,omitempty"`
+	// Foursquare venue name. Optional.
+	VenueName string `json:"venue_name,omitempty"`
+
+	// Version number of the app. Optional.
+	AppVersion string `json:"app_version,omitempty"`
+	// Build date of the app. Optional.
+	AppDate string `json:"app_date,omitempty"`
+
+	// The sharing object is optional and will apply the user's settings if not sent.
+	// If sharing is sent, each key will override the user's setting for that social network.
+	// Send true to post or false to not post on the indicated social network. You can see which
+	// social networks a user has connected with the /users/settings method.
+	Sharing *SharingParams `json:"sharing,omitempty"`
 }
 
 func (s *StartCheckinParams) MarshalJSON() ([]byte, error) {
