@@ -1,3 +1,7 @@
+// Package recommendation provides functions to retrieve and configure movie and show recommendations.
+//
+// Recommendations are based on the watched history for a user and their friends. There are other factors
+// that go into the algorithm as well to further personalize what gets recommended.
 package recommendation
 
 import (
