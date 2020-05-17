@@ -7,8 +7,8 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-// Client the genre client.
-type Client struct{ b trakt.BaseClient }
+// client the genre client.
+type client struct{ b trakt.BaseClient }
 
 // List retrieves a list of all genres, including names and slugs.
 func List(params *trakt.ListByTypeParams) *trakt.GenreIterator {
@@ -16,7 +16,7 @@ func List(params *trakt.ListByTypeParams) *trakt.GenreIterator {
 }
 
 // List retrieves a list of all genres, including names and slugs.
-func (c *Client) List(params *trakt.ListByTypeParams) *trakt.GenreIterator {
+func (c *client) List(params *trakt.ListByTypeParams) *trakt.GenreIterator {
 	path := trakt.FormatURLPath("/genres/%s", params.Type)
 	return &trakt.GenreIterator{
 		BasicIterator: c.b.NewSimulatedIteratorWithCondition(http.MethodGet, path, params, func() error {
@@ -36,4 +36,4 @@ func (c *Client) List(params *trakt.ListByTypeParams) *trakt.GenreIterator {
 }
 
 // getC retrieves an instance of a genre client.
-func getC() *Client { return &Client{trakt.NewClient()} }
+func getC() *client { return &client{trakt.NewClient()} }

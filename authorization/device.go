@@ -8,8 +8,8 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-// Client the authorization client which is used for requests.
-type Client struct{ b trakt.BaseClient }
+// client the authorization client which is used for requests.
+type client struct{ b trakt.BaseClient }
 
 // newDeviceCodeParams request structure to generate a new device code.
 type newDeviceCodeParams struct {
@@ -29,7 +29,7 @@ func NewCode(params *trakt.BasicParams) (*trakt.DeviceCode, error) {
 // NewCode Generates new codes to start the device authentication process. The device_code and interval
 // will be used later to poll for the access_token. The user_code and verification_url should be presented
 // to the user as mentioned in the flow steps above.
-func (c *Client) NewCode(params *trakt.BasicParams) (*trakt.DeviceCode, error) {
+func (c *client) NewCode(params *trakt.BasicParams) (*trakt.DeviceCode, error) {
 	d := &trakt.DeviceCode{}
 	p := &newDeviceCodeParams{params, c.b.Key()}
 	err := c.b.Call(http.MethodPost, "/oauth/device/code", p, &d)
@@ -72,10 +72,10 @@ func (wrappedPollCodeParams) Code(statusCode int) trakt.ErrorCode {
 // when generating a new code.
 //
 // this function is blocking until either:
-// - we receive a 200 response with access token from the API.
-// - the supplied context is marked as done
-// - the supplied expires in duration exceeds its deadline
-// - any errors which deem that the token cannot be processed are returned from the API.
+//  - we receive a 200 response with access token from the API.
+//  - the supplied context is marked as done
+//  - the supplied expires in duration exceeds its deadline
+//  - any errors which deem that the token cannot be processed are returned from the API.
 //
 // if you require more control over when your app blocks for the result, use PollAsync which returns a
 // channel that the result is pushed to.
@@ -92,14 +92,14 @@ func Poll(params *trakt.PollCodeParams) (*trakt.Token, error) {
 // when generating a new code.
 //
 // this function is blocking until either:
-// - we receive a 200 response with access token from the API.
-// - the supplied context is marked as done
-// - the supplied expires in duration exceeds its deadline
-// - any errors which deem that the token cannot be processed are returned from the API.
+//  - we receive a 200 response with access token from the API.
+//  - the supplied context is marked as done
+//  - the supplied expires in duration exceeds its deadline
+//  - any errors which deem that the token cannot be processed are returned from the API.
 //
 // if you require more control over when your app blocks for the result, use PollAsync which returns a
 // channel that the result is pushed to.
-func (c *Client) Poll(params *trakt.PollCodeParams) (*trakt.Token, error) {
+func (c *client) Poll(params *trakt.PollCodeParams) (*trakt.Token, error) {
 	r := <-c.PollAsync(params)
 	return r.Token, r.Err
 }
@@ -128,7 +128,7 @@ func PollAsync(params *trakt.PollCodeParams) <-chan *trakt.PollResult {
 //
 // This function does not block but instead returns a read-only channel which will have the result of polling
 // for the result once it is available.
-func (c *Client) PollAsync(params *trakt.PollCodeParams) <-chan *trakt.PollResult {
+func (c *client) PollAsync(params *trakt.PollCodeParams) <-chan *trakt.PollResult {
 	cCtx := params.Context
 	if cCtx == nil {
 		cCtx = context.Background()
@@ -191,7 +191,7 @@ func (c *Client) PollAsync(params *trakt.PollCodeParams) <-chan *trakt.PollResul
 
 // poll performs a HTTP request to poll for the status of authorization on a device code.
 // This function should be called on the interval defined in the DeviceCode when it was generated.
-func (c *Client) poll(params *trakt.PollCodeParams) (*trakt.Token, error) {
+func (c *client) poll(params *trakt.PollCodeParams) (*trakt.Token, error) {
 	t := &trakt.Token{}
 	p := &wrappedPollCodeParams{params, c.b.Key()}
 	err := c.b.Call(http.MethodPost, "/oauth/device/token", p, t)
@@ -211,4 +211,4 @@ func withContext(ctx context.Context, w *trakt.PollCodeParams) *trakt.PollCodePa
 func canContinuePolling(e trakt.ErrorCode) bool { return e == trakt.ErrorCodePendingDeviceCode }
 
 // getC returns a copy of a authorization client with the currently defined backend attached.
-func getC() *Client { return &Client{trakt.NewClient()} }
+func getC() *client { return &client{trakt.NewClient()} }

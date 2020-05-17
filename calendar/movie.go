@@ -31,7 +31,7 @@ func MyMovies(p *trakt.CalendarParams) *trakt.CalendarMovieIterator { return get
 // - OAuth Required
 // - Extended Info
 // - Filters
-func (c *Client) MyMovies(params *trakt.CalendarParams) *trakt.CalendarMovieIterator {
+func (c *client) MyMovies(params *trakt.CalendarParams) *trakt.CalendarMovieIterator {
 	return c.movies(scopeAuthenticated, mediaTypeMovie, &wrappedCalendarParams{params})
 }
 
@@ -47,7 +47,7 @@ func MyDVDs(p *trakt.CalendarParams) *trakt.CalendarMovieIterator { return getC(
 // - OAuth Required
 // - Extended Info
 // - Filters
-func (c *Client) MyDVDs(params *trakt.CalendarParams) *trakt.CalendarMovieIterator {
+func (c *client) MyDVDs(params *trakt.CalendarParams) *trakt.CalendarMovieIterator {
 	return c.movies(scopeAuthenticated, mediaTypeDVD, &wrappedCalendarParams{params})
 }
 
@@ -61,7 +61,7 @@ func Movies(p *trakt.BasicCalendarParams) *trakt.CalendarMovieIterator { return 
 //
 // - Extended Info
 // - Filters
-func (c *Client) Movies(params *trakt.BasicCalendarParams) *trakt.CalendarMovieIterator {
+func (c *client) Movies(params *trakt.BasicCalendarParams) *trakt.CalendarMovieIterator {
 	return c.movies(scopeAll, mediaTypeMovie, &wrappedBasicCalendarParams{params})
 }
 
@@ -75,17 +75,17 @@ func DVDs(p *trakt.BasicCalendarParams) *trakt.CalendarMovieIterator { return ge
 //
 // - Extended Info
 // - Filters
-func (c *Client) DVDs(params *trakt.BasicCalendarParams) *trakt.CalendarMovieIterator {
+func (c *client) DVDs(params *trakt.BasicCalendarParams) *trakt.CalendarMovieIterator {
 	return c.movies(scopeAll, mediaTypeDVD, &wrappedBasicCalendarParams{params})
 }
 
 // movies helper function which generates an iterator for a set of movies based on the scope level and
 // media type.
-func (c *Client) movies(scope scope, mediaType mediaType, params calendarParams) *trakt.CalendarMovieIterator {
+func (c *client) movies(scope scope, mediaType mediaType, params calendarParams) *trakt.CalendarMovieIterator {
 	return c.generateMovieIterator(trakt.FormatURLPath("/calendars/%s/%s", scope, mediaType), params)
 }
 
 // generateMovieIterator generates an iterator for movies based on the path and params provided.
-func (c *Client) generateMovieIterator(path string, p calendarParams) *trakt.CalendarMovieIterator {
+func (c *client) generateMovieIterator(path string, p calendarParams) *trakt.CalendarMovieIterator {
 	return &trakt.CalendarMovieIterator{Iterator: c.b.NewIterator(http.MethodGet, formatPath(path, p), p.elem())}
 }

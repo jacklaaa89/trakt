@@ -23,49 +23,49 @@ const (
 	timeFormat = "2006-01-02"
 )
 
-// Client the calendar client used to make requests.
-type Client struct{ b trakt.BaseClient }
+// client the calendar client used to make requests.
+type client struct{ b trakt.BaseClient }
 
 // MyShows returns all shows airing during the time period specified for the authenticated user.
 //
-// - OAuth Required
-// - Extended Info
-// - Filters
+//  - OAuth Required
+//  - Extended Info
+//  - Filters
 func MyShows(p *trakt.CalendarParams) *trakt.CalendarShowIterator { return getC().MyShows(p) }
 
 // MyShows returns all shows airing during the time period specified for the authenticated user.
 //
-// - OAuth Required
-// - Extended Info
-// - Filters
-func (c *Client) MyShows(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
+//  - OAuth Required
+//  - Extended Info
+//  - Filters
+func (c *client) MyShows(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
 	return c.shows(scopeAuthenticated, &wrappedCalendarParams{params})
 }
 
 // MyNewShows returns all new show premieres (season 1, episode 1) airing during the time period specified
 // for the authenticated user.
 //
-// - OAuth Required
-// - Extended Info
-// - Filters
+//  - OAuth Required
+//  - Extended Info
+//  - Filters
 func MyNewShows(p *trakt.CalendarParams) *trakt.CalendarShowIterator { return getC().MyNewShows(p) }
 
 // MyNewShows returns all new show premieres (season 1, episode 1) airing during the time period specified
 // for the authenticated user.
 //
-// - OAuth Required
-// - Extended Info
-// - Filters
-func (c *Client) MyNewShows(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
+//  - OAuth Required
+//  - Extended Info
+//  - Filters
+func (c *client) MyNewShows(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
 	return c.newShows(scopeAuthenticated, &wrappedCalendarParams{params})
 }
 
 // MySeasonPremieres returns all show premieres (any season, episode 1) airing during the time period
 // specified for the authenticated user.
 //
-// - OAuth Required
-// - Extended Info
-// - Filters
+//  - OAuth Required
+//  - Extended Info
+//  - Filters
 func MySeasonPremieres(p *trakt.CalendarParams) *trakt.CalendarShowIterator {
 	return getC().MySeasonPremieres(p)
 }
@@ -73,48 +73,48 @@ func MySeasonPremieres(p *trakt.CalendarParams) *trakt.CalendarShowIterator {
 // MySeasonPremieres returns all show premieres (any season, episode 1) airing during the time period
 // specified for the authenticated user.
 //
-// - OAuth Required
-// - Extended Info
-// - Filters
-func (c *Client) MySeasonPremieres(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
+//  - OAuth Required
+//  - Extended Info
+//  - Filters
+func (c *client) MySeasonPremieres(params *trakt.CalendarParams) *trakt.CalendarShowIterator {
 	return c.seasonPremieres(scopeAuthenticated, &wrappedCalendarParams{params})
 }
 
 // Shows returns all shows airing during the time period specified.
 //
-// - Extended Info
-// - Filters
+//  - Extended Info
+//  - Filters
 func Shows(p *trakt.BasicCalendarParams) *trakt.CalendarShowIterator { return getC().Shows(p) }
 
 // Shows returns all shows airing during the time period specified.
 //
-// - Extended Info
-// - Filters
-func (c *Client) Shows(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
+//  - Extended Info
+//  - Filters
+func (c *client) Shows(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
 	return c.shows(scopeAll, &wrappedBasicCalendarParams{params})
 }
 
 // NewShows returns all new show premieres (season 1, episode 1) airing during the time period specified.
 //
-// - Extended Info
-// - Filters
+//  - Extended Info
+//  - Filters
 func NewShows(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
 	return getC().NewShows(params)
 }
 
 // NewShows returns all new show premieres (season 1, episode 1) airing during the time period specified.
 //
-// - Extended Info
-// - Filters
-func (c *Client) NewShows(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
+//  - Extended Info
+//  - Filters
+func (c *client) NewShows(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
 	return c.newShows(scopeAll, &wrappedBasicCalendarParams{params})
 }
 
 // SeasonPremieres returns all show premieres (any season, episode 1) airing during the time period
 // specified.
 //
-// - Extended Info
-// - Filters
+//  - Extended Info
+//  - Filters
 func SeasonPremieres(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
 	return getC().SeasonPremieres(params)
 }
@@ -122,31 +122,31 @@ func SeasonPremieres(params *trakt.BasicCalendarParams) *trakt.CalendarShowItera
 // SeasonPremieres returns all show premieres (any season, episode 1) airing during the time period
 // specified.
 //
-// - Extended Info
-// - Filters
-func (c *Client) SeasonPremieres(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
+//  - Extended Info
+//  - Filters
+func (c *client) SeasonPremieres(params *trakt.BasicCalendarParams) *trakt.CalendarShowIterator {
 	return c.seasonPremieres(scopeAll, &wrappedBasicCalendarParams{params})
 }
 
 // shows helper function which generates an iterator for a list of shows under the supplied scope.
-func (c *Client) shows(scope scope, params calendarParams) *trakt.CalendarShowIterator {
+func (c *client) shows(scope scope, params calendarParams) *trakt.CalendarShowIterator {
 	return c.generateShowIterator(trakt.FormatURLPath("/calendars/%s/shows", scope), params)
 }
 
 // newShows helper function which generates an iterator for a list of new shows under the supplied scope.
-func (c *Client) newShows(scope scope, params calendarParams) *trakt.CalendarShowIterator {
+func (c *client) newShows(scope scope, params calendarParams) *trakt.CalendarShowIterator {
 	return c.generateShowIterator(trakt.FormatURLPath("/calendars/%s/shows/new", scope), params)
 }
 
 // seasonPremieres helper function which generates an iterator for a list of season premieres
 // under the supplied scope.
-func (c *Client) seasonPremieres(scope scope, params calendarParams) *trakt.CalendarShowIterator {
+func (c *client) seasonPremieres(scope scope, params calendarParams) *trakt.CalendarShowIterator {
 	return c.generateShowIterator(trakt.FormatURLPath("/calendars/%s/shows/premieres", scope), params)
 }
 
 // generateShowIterator generates an iterator to retrieve calender shows for the supplied
 // path and params.
-func (c *Client) generateShowIterator(path string, params calendarParams) *trakt.CalendarShowIterator {
+func (c *client) generateShowIterator(path string, params calendarParams) *trakt.CalendarShowIterator {
 	return &trakt.CalendarShowIterator{Iterator: c.b.NewIterator(http.MethodGet, formatPath(path, params), params.elem())}
 }
 
@@ -209,4 +209,4 @@ func (w *wrappedBasicCalendarParams) days() int { return int(w.Days) }
 // elem implements the calendarParams interface.
 func (w *wrappedBasicCalendarParams) elem() trakt.ListParamsContainer { return w.BasicCalendarParams }
 
-func getC() *Client { return &Client{trakt.NewClient()} }
+func getC() *client { return &client{trakt.NewClient()} }

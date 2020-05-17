@@ -13,8 +13,8 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-// Client represents a client which can be used to perform checkin requests.
-type Client struct{ b trakt.BaseClient }
+// client represents a client which can be used to perform checkin requests.
+type client struct{ b trakt.BaseClient }
 
 // Start Check into a movie or episode. This should be tied to a user action to manually indicate
 // they are watching something. The item will display as watching on the site, then
@@ -28,7 +28,7 @@ type Client struct{ b trakt.BaseClient }
 // the media object can be matched more accurately. Use the trakt ID or slug where possible
 // as these always have a mapping.
 //
-// - OAuth Required
+//  - OAuth Required
 func Start(params *trakt.StartCheckinParams) (*trakt.Checkin, error) {
 	return getC().Start(params)
 }
@@ -45,8 +45,8 @@ func Start(params *trakt.StartCheckinParams) (*trakt.Checkin, error) {
 // the media object can be matched more accurately. Use the trakt ID or slug where possible
 // as these always have a mapping.
 //
-// - OAuth Required
-func (c *Client) Start(params *trakt.StartCheckinParams) (*trakt.Checkin, error) {
+//  - OAuth Required
+func (c *client) Start(params *trakt.StartCheckinParams) (*trakt.Checkin, error) {
 	switch params.Type {
 	case trakt.TypeMovie, trakt.TypeEpisode:
 		break
@@ -67,15 +67,15 @@ func (c *Client) Start(params *trakt.StartCheckinParams) (*trakt.Checkin, error)
 
 // Stop removes any active check-ins, no need to provide a specific item.
 //
-// - OAuth Required
+//  - OAuth Required
 func Stop(params *trakt.Params) error {
 	return getC().Stop(params)
 }
 
 // Stop removes any active check-ins, no need to provide a specific item.
 //
-// - OAuth Required
-func (c *Client) Stop(params *trakt.Params) error {
+//  - OAuth Required
+func (c *client) Stop(params *trakt.Params) error {
 	return c.b.Call(http.MethodDelete, "/checkin", params, nil)
 }
 
@@ -94,4 +94,4 @@ func (wrappedCheckinParams) Code(statusCode int) trakt.ErrorCode {
 }
 
 // getC initialises a new checkin client with the currently defined backend.
-func getC() *Client { return &Client{trakt.NewClient()} }
+func getC() *client { return &client{trakt.NewClient()} }

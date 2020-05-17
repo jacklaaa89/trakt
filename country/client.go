@@ -7,8 +7,8 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-// Client the country client.
-type Client struct{ b trakt.BaseClient }
+// client the country client.
+type client struct{ b trakt.BaseClient }
 
 // List retrieves a list of all countries, including names and codes. Only TypeMovie and TypeShow are supported.
 func List(params *trakt.ListByTypeParams) *trakt.CountryIterator {
@@ -16,7 +16,7 @@ func List(params *trakt.ListByTypeParams) *trakt.CountryIterator {
 }
 
 // List retrieves a list of all countries, including names and codes. Only TypeMovie and TypeShow are supported.
-func (c *Client) List(params *trakt.ListByTypeParams) *trakt.CountryIterator {
+func (c *client) List(params *trakt.ListByTypeParams) *trakt.CountryIterator {
 	path := trakt.FormatURLPath("/countries/%s", params.Type.Plural())
 	return &trakt.CountryIterator{
 		BasicIterator: c.b.NewSimulatedIteratorWithCondition(http.MethodGet, path, params, func() error {
@@ -36,4 +36,4 @@ func (c *Client) List(params *trakt.ListByTypeParams) *trakt.CountryIterator {
 }
 
 // getC retrieves an instance of a country client.
-func getC() *Client { return &Client{trakt.NewClient()} }
+func getC() *client { return &client{trakt.NewClient()} }

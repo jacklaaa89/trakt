@@ -6,15 +6,15 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-// Client represents a client which is capable of perform comment
+// client represents a client which is capable of perform comment
 // based operations, utilising the base client.
-type Client struct{ b trakt.BaseClient }
+type client struct{ b trakt.BaseClient }
 
 // Get returns a single comment and indicates how many replies it has. Use "Replies" to get the actual replies.
 func Get(id int64, params *trakt.BasicParams) (*trakt.Comment, error) { return getC().Get(id, params) }
 
 // Get returns a single comment and indicates how many replies it has. Use "Replies" to get the actual replies.
-func (c *Client) Get(id int64, params *trakt.BasicParams) (*trakt.Comment, error) {
+func (c *client) Get(id int64, params *trakt.BasicParams) (*trakt.Comment, error) {
 	path := trakt.FormatURLPath("/comments/%s", id)
 	com := &trakt.Comment{}
 	err := c.b.Call(http.MethodGet, path, params, com)
@@ -24,14 +24,14 @@ func (c *Client) Get(id int64, params *trakt.BasicParams) (*trakt.Comment, error
 // Likes returns all users who liked a comment. If you only need the replies count, the main comment
 // object already has that, so no need to use this method.
 //
-// - Pagination
+//  - Pagination
 func Likes(id int64, p *trakt.BasicListParams) *trakt.UserLikeIterator { return getC().Likes(id, p) }
 
 // Likes returns all users who liked a comment. If you only need the replies count, the main comment
 // object already has that, so no need to use this method.
 //
-// - Pagination
-func (c *Client) Likes(id int64, params *trakt.BasicListParams) *trakt.UserLikeIterator {
+//  - Pagination
+func (c *client) Likes(id int64, params *trakt.BasicListParams) *trakt.UserLikeIterator {
 	path := trakt.FormatURLPath("/comments/%s/likes", id)
 	return &trakt.UserLikeIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
@@ -39,14 +39,14 @@ func (c *Client) Likes(id int64, params *trakt.BasicListParams) *trakt.UserLikeI
 // Replies returns all replies for a comment. It is possible these replies could have replies themselves,
 // so in that case you would just call this function again with the new comment id.
 //
-// - Pagination
+//  - Pagination
 func Replies(id int64, p *trakt.ListParams) *trakt.CommentIterator { return getC().Replies(id, p) }
 
 // Replies returns all replies for a comment. It is possible these replies could have replies themselves,
 // so in that case you would just call this function again with the new comment id.
 //
-// - Pagination
-func (c *Client) Replies(id int64, params *trakt.ListParams) *trakt.CommentIterator {
+//  - Pagination
+func (c *client) Replies(id int64, params *trakt.ListParams) *trakt.CommentIterator {
 	path := trakt.FormatURLPath("/comments/%s/replies", id)
 	return &trakt.CommentIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
@@ -54,7 +54,7 @@ func (c *Client) Replies(id int64, params *trakt.ListParams) *trakt.CommentItera
 // Item returns the media item this comment is attached to. The media type can be movie,
 // show, season, episode, or list and it also returns the standard media object for that media type.
 //
-// - Extended Info
+//  - Extended Info
 func Item(id int64, p *trakt.ExtendedParams) (*trakt.GenericElement, error) {
 	return getC().Item(id, p)
 }
@@ -62,8 +62,8 @@ func Item(id int64, p *trakt.ExtendedParams) (*trakt.GenericElement, error) {
 // Item returns the media item this comment is attached to. The media type can be movie,
 // show, season, episode, or list and it also returns the standard media object for that media type.
 //
-// - Extended Info
-func (c *Client) Item(id int64, params *trakt.ExtendedParams) (*trakt.GenericElement, error) {
+//  - Extended Info
+func (c *client) Item(id int64, params *trakt.ExtendedParams) (*trakt.GenericElement, error) {
 	path := trakt.FormatURLPath("/comments/%s/item", id)
 	com := &trakt.GenericElement{}
 	err := c.b.Call(http.MethodGet, path, params, com)
@@ -73,8 +73,8 @@ func (c *Client) Item(id int64, params *trakt.ExtendedParams) (*trakt.GenericEle
 // Trending returns all comments with the most likes and replies over the last 7 days. You can optionally filter
 // by the comment_type and media type to limit what gets returned.
 //
-// - Pagination
-// - Extended Info
+//  - Pagination
+//  - Extended Info
 func Trending(p *trakt.TrendingCommentParams) *trakt.CommentWithMediaElementIterator {
 	return getC().Trending(p)
 }
@@ -82,17 +82,17 @@ func Trending(p *trakt.TrendingCommentParams) *trakt.CommentWithMediaElementIter
 // Trending returns all comments with the most likes and replies over the last 7 days. You can optionally filter
 // by the comment_type and media type to limit what gets returned.
 //
-// - Pagination
-// - Extended Info
-func (c *Client) Trending(params *trakt.TrendingCommentParams) *trakt.CommentWithMediaElementIterator {
+//  - Pagination
+//  - Extended Info
+func (c *client) Trending(params *trakt.TrendingCommentParams) *trakt.CommentWithMediaElementIterator {
 	return c.generateIterator(`trending`, params)
 }
 
 // Recent returns the most recently written comments across all of Trakt. You can optionally filter
 // by the comment_type and media type to limit what gets returned.
 //
-// - Pagination
-// - Extended Info
+//  - Pagination
+//  - Extended Info
 func Recent(params *trakt.RecentCommentParams) *trakt.CommentWithMediaElementIterator {
 	return getC().Recent(params)
 }
@@ -100,17 +100,17 @@ func Recent(params *trakt.RecentCommentParams) *trakt.CommentWithMediaElementIte
 // Recent returns the most recently written comments across all of Trakt. You can optionally filter
 // by the comment_type and media type to limit what gets returned.
 //
-// - Pagination
-// - Extended Info
-func (c *Client) Recent(params *trakt.RecentCommentParams) *trakt.CommentWithMediaElementIterator {
+//  - Pagination
+//  - Extended Info
+func (c *client) Recent(params *trakt.RecentCommentParams) *trakt.CommentWithMediaElementIterator {
 	return c.generateIterator(`recent`, params)
 }
 
 // Updates returns the most recently updated comments across all of Trakt. You can optionally filter
 // by the comment_type and media type to limit what gets returned.
 //
-// - Pagination
-// - Extended Info
+//  - Pagination
+//  - Extended Info
 func Updates(params *trakt.UpdatedCommentParams) *trakt.CommentWithMediaElementIterator {
 	return getC().Updates(params)
 }
@@ -118,9 +118,9 @@ func Updates(params *trakt.UpdatedCommentParams) *trakt.CommentWithMediaElementI
 // Updates returns the most recently updated comments across all of Trakt. You can optionally filter
 // by the comment_type and media type to limit what gets returned.
 //
-// - Pagination
-// - Extended Info
-func (c *Client) Updates(params *trakt.UpdatedCommentParams) *trakt.CommentWithMediaElementIterator {
+//  - Pagination
+//  - Extended Info
+func (c *client) Updates(params *trakt.UpdatedCommentParams) *trakt.CommentWithMediaElementIterator {
 	return c.generateIterator(`updates`, params)
 }
 
@@ -142,7 +142,7 @@ func (c *Client) Updates(params *trakt.UpdatedCommentParams) *trakt.CommentWithM
 // ErrorCodeCommentCannotBeRemoved - comment can't be deleted
 // ErrorCodeValidationError        - comment does not conform to rules set out above.
 //
-// - OAuth Required
+//  - OAuth Required
 func Post(p *trakt.PostCommentParams) (*trakt.Comment, error) { return getC().Post(p) }
 
 // Post attempt to add a new comment to a movie, show, season, episode, or list. Make sure to allow and
@@ -163,8 +163,8 @@ func Post(p *trakt.PostCommentParams) (*trakt.Comment, error) { return getC().Po
 // "ErrorCodeCommentCannotBeRemoved" - comment can't be deleted
 // "ErrorCodeValidationError"        - comment does not conform to rules set out above.
 //
-// - OAuth Required
-func (c *Client) Post(params *trakt.PostCommentParams) (*trakt.Comment, error) {
+//  - OAuth Required
+func (c *client) Post(params *trakt.PostCommentParams) (*trakt.Comment, error) {
 	com := &trakt.Comment{}
 	err := c.b.Call(http.MethodPost, "/comments", &wrappedPostCommentParams{PostCommentParams: params}, &com)
 	return com, err
@@ -174,7 +174,7 @@ func (c *Client) Post(params *trakt.PostCommentParams) (*trakt.Comment, error) {
 // comment in order to update it. If not, an error with the "ErrorCodePostInvalidUser" error code
 // is returned.
 //
-// - OAuth Required
+//  - OAuth Required
 func Update(id int64, p *trakt.UpdateCommentParams) (*trakt.Comment, error) {
 	return getC().Update(id, p)
 }
@@ -183,8 +183,8 @@ func Update(id int64, p *trakt.UpdateCommentParams) (*trakt.Comment, error) {
 // comment in order to update it. If not, an error with the "ErrorCodePostInvalidUser" error code
 // is returned.
 //
-// - OAuth Required
-func (c *Client) Update(id int64, params *trakt.UpdateCommentParams) (*trakt.Comment, error) {
+//  - OAuth Required
+func (c *client) Update(id int64, params *trakt.UpdateCommentParams) (*trakt.Comment, error) {
 	com := &trakt.Comment{}
 	err := c.b.Call(
 		http.MethodPut,
@@ -200,7 +200,7 @@ func (c *Client) Update(id int64, params *trakt.UpdateCommentParams) (*trakt.Com
 // The comment must also be less than 2 weeks old or have 0 replies. If not, an error with the
 // "ErrorCodeCommentCannotBeRemoved" error code is returned.
 //
-// - OAuth Required
+//  - OAuth Required
 func Remove(id int64, p *trakt.Params) error { return getC().Remove(id, p) }
 
 // Remove attempts to delete a single comment. The OAuth user must match the author of the comment
@@ -208,8 +208,8 @@ func Remove(id int64, p *trakt.Params) error { return getC().Remove(id, p) }
 // The comment must also be less than 2 weeks old or have 0 replies. If not, an error with the
 // "ErrorCodeCommentCannotBeRemoved" error code is returned.
 //
-// - OAuth Required
-func (c *Client) Remove(id int64, params *trakt.Params) error {
+//  - OAuth Required
+func (c *client) Remove(id int64, params *trakt.Params) error {
 	return c.b.Call(
 		http.MethodDelete, trakt.FormatURLPath("/comment/%s", id),
 		&wrappedRemoveCommentParams{Params: params}, nil,
@@ -219,7 +219,7 @@ func (c *Client) Remove(id int64, params *trakt.Params) error {
 // AddReply attempts to add a new reply to an existing comment. Make sure to allow and encourage
 // spoilers to be indicated in your app and follow the rules listed above.
 //
-// - OAuth Required
+//  - OAuth Required
 func AddReply(id int64, p *trakt.AddReplyParams) (*trakt.Comment, error) {
 	return getC().AddReply(id, p)
 }
@@ -227,8 +227,8 @@ func AddReply(id int64, p *trakt.AddReplyParams) (*trakt.Comment, error) {
 // AddReply attempts to add a new reply to an existing comment. Make sure to allow and encourage
 // spoilers to be indicated in your app and follow the rules listed above.
 //
-// - OAuth Required
-func (c *Client) AddReply(id int64, params *trakt.AddReplyParams) (*trakt.Comment, error) {
+//  - OAuth Required
+func (c *client) AddReply(id int64, params *trakt.AddReplyParams) (*trakt.Comment, error) {
 	com := &trakt.Comment{}
 	err := c.b.Call(
 		http.MethodPost,
@@ -242,26 +242,26 @@ func (c *Client) AddReply(id int64, params *trakt.AddReplyParams) (*trakt.Commen
 // AddLike attempts to add a like to a comment.
 // Votes help determine popular comments. Only one like is allowed per comment per user.
 //
-// - OAuth Required
+//  - OAuth Required
 func AddLike(id int64, p *trakt.Params) error { return getC().AddLike(id, p) }
 
 // AddLike attempts to add a like to a comment.
 // Votes help determine popular comments. Only one like is allowed per comment per user.
 //
-// - OAuth Required
-func (c *Client) AddLike(id int64, params *trakt.Params) error {
+//  - OAuth Required
+func (c *client) AddLike(id int64, params *trakt.Params) error {
 	return c.b.Call(http.MethodPost, trakt.FormatURLPath("/comments/%s/like", id), params, nil)
 }
 
 // RemoveLike attempts to remove as like on a comment.
 //
-// - OAuth Required
+//  - OAuth Required
 func RemoveLike(id int64, p *trakt.Params) error { return getC().RemoveLike(id, p) }
 
 // RemoveLike attempts to remove as like on a comment.
 //
-// - OAuth Required
-func (c *Client) RemoveLike(id int64, params *trakt.Params) error {
+//  - OAuth Required
+func (c *client) RemoveLike(id int64, params *trakt.Params) error {
 	return c.b.Call(http.MethodDelete, trakt.FormatURLPath("/comments/%s/like", id), params, nil)
 }
 
@@ -311,7 +311,7 @@ func (commentErrorHandler) Code(statusCode int) trakt.ErrorCode {
 // - Recent
 // - Updates
 // as the only thing that changes is the action that is called in terms of arguments.
-func (c *Client) generateIterator(act string, p *trakt.TrendingCommentParams) *trakt.CommentWithMediaElementIterator {
+func (c *client) generateIterator(act string, p *trakt.TrendingCommentParams) *trakt.CommentWithMediaElementIterator {
 	var ct, mt = trakt.All, trakt.All
 	if p.MediaType != "" {
 		mt = string(p.MediaType)
@@ -325,4 +325,4 @@ func (c *Client) generateIterator(act string, p *trakt.TrendingCommentParams) *t
 }
 
 // getC initialises a new comment client from the current backend configuration.
-func getC() *Client { return &Client{trakt.NewClient()} }
+func getC() *client { return &client{trakt.NewClient()} }

@@ -50,7 +50,7 @@ func AuthorizeURL(params *trakt.AuthorizationURLParams) (string, error) {
 // complete. You can use "urn:ietf:wg:oauth:2.0:oob" for device authentication.
 // The state is a random unique string which will be returned to the Redirect URI. This can be compared against
 // to reduce the risk of "Man-In-The-Middle" attacks. See: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
-func (c *Client) AuthorizeURL(params *trakt.AuthorizationURLParams) (string, error) {
+func (c *client) AuthorizeURL(params *trakt.AuthorizationURLParams) (string, error) {
 	if params == nil {
 		return "", errors.New("params cannot be nil")
 	}
@@ -90,7 +90,7 @@ type wrappedExchangeCodeParams struct {
 // The access_token is valid for 3 months. Save and use the refresh_token to get a new access_token
 // without asking the user to re-authenticate.
 // This function requires the same RedirectURI which was sent in the initial request to get the code
-// and also the Client Secret which is also assigned to you when you create an application on Trakt.
+// and also the client Secret which is also assigned to you when you create an application on Trakt.
 func ExchangeCode(params *trakt.ExchangeCodeParams) (*trakt.Token, error) {
 	return getC().ExchangeCode(params)
 }
@@ -100,8 +100,8 @@ func ExchangeCode(params *trakt.ExchangeCodeParams) (*trakt.Token, error) {
 // The access_token is valid for 3 months. Save and use the refresh_token to get a new access_token
 // without asking the user to re-authenticate.
 // This function requires the same RedirectURI which was sent in the initial request to get the code
-// and also the Client Secret which is also assigned to you when you create an application on Trakt.
-func (c *Client) ExchangeCode(params *trakt.ExchangeCodeParams) (*trakt.Token, error) {
+// and also the client Secret which is also assigned to you when you create an application on Trakt.
+func (c *client) ExchangeCode(params *trakt.ExchangeCodeParams) (*trakt.Token, error) {
 	t := &trakt.Token{}
 	p := &wrappedExchangeCodeParams{params, genericTokenParameters{c.b.Key(), authorizationCode}}
 	err := c.b.Call(http.MethodPost, `/oauth/token`, p, t)
@@ -118,7 +118,7 @@ type wrappedRefreshTokenParams struct {
 // RefreshToken uses the Refresh Token to get a new Access Token without asking the user to re-authenticate.
 // The Access Token is valid for 3 months before it needs to be refreshed again.
 // This function requires the same RedirectURI which was sent in the initial request to get the code
-// and also the Client Secret which is also assigned to you when you create an application on Trakt.
+// and also the client Secret which is also assigned to you when you create an application on Trakt.
 func RefreshToken(params *trakt.RefreshTokenParams) (*trakt.Token, error) {
 	return getC().RefreshToken(params)
 }
@@ -126,8 +126,8 @@ func RefreshToken(params *trakt.RefreshTokenParams) (*trakt.Token, error) {
 // RefreshToken uses the Refresh Token to get a new Access Token without asking the user to re-authenticate.
 // The Access Token is valid for 3 months before it needs to be refreshed again.
 // This function requires the same RedirectURI which was sent in the initial request to get the code
-// and also the Client Secret which is also assigned to you when you create an application on Trakt.
-func (c *Client) RefreshToken(params *trakt.RefreshTokenParams) (*trakt.Token, error) {
+// and also the client Secret which is also assigned to you when you create an application on Trakt.
+func (c *client) RefreshToken(params *trakt.RefreshTokenParams) (*trakt.Token, error) {
 	t := &trakt.Token{}
 	p := &wrappedRefreshTokenParams{params, genericTokenParameters{c.b.Key(), refreshToken}}
 	err := c.b.Call(http.MethodPost, `/oauth/token`, p, t)
@@ -145,7 +145,7 @@ type wrappedRevokeTokenParams struct {
 // RevokeToken revokes an access token when a user signs out of their Trakt account in your app.
 // This is not required, but might improve the user experience so the user doesn't have an
 // unused app connection hanging around.
-// This function requires the Client Secret which is also assigned to you when you create an application on Trakt.
+// This function requires the client Secret which is also assigned to you when you create an application on Trakt.
 func RevokeToken(params *trakt.RevokeTokenParams) error {
 	return getC().RevokeToken(params)
 }
@@ -153,8 +153,8 @@ func RevokeToken(params *trakt.RevokeTokenParams) error {
 // RevokeToken revokes an access token when a user signs out of their Trakt account in your app.
 // This is not required, but might improve the user experience so the user doesn't have an
 // unused app connection hanging around.
-// This function requires the Client Secret which is also assigned to you when you create an application on Trakt.
-func (c *Client) RevokeToken(params *trakt.RevokeTokenParams) error {
+// This function requires the client Secret which is also assigned to you when you create an application on Trakt.
+func (c *client) RevokeToken(params *trakt.RevokeTokenParams) error {
 	p := &wrappedRevokeTokenParams{params, c.b.Key()}
 	return c.b.Call(http.MethodPost, `/oauth/revoke`, p, nil)
 }

@@ -1,3 +1,4 @@
+// Package episode contains functions to retrieve episode details.
 package episode
 
 import (
@@ -15,7 +16,7 @@ type Client struct{ b trakt.BaseClient }
 //
 // Note: If the first_aired is unknown, it will be set to null.
 //
-// - Extended Info
+//  - Extended Info
 func Get(id trakt.SearchID, season, episode int64, params *trakt.ExtendedParams) (*trakt.Episode, error) {
 	return getC().Get(id, season, episode, params)
 }
@@ -25,7 +26,7 @@ func Get(id trakt.SearchID, season, episode int64, params *trakt.ExtendedParams)
 //
 // Note: If the first_aired is unknown, it will be set to null.
 //
-// - Extended Info
+//  - Extended Info
 func (c *Client) Get(id trakt.SearchID, season, episode int64, params *trakt.ExtendedParams) (*trakt.Episode, error) {
 	path := trakt.FormatURLPath("/shows/%s/seasons/%s/episodes/%s", id, season, episode)
 	ep := &trakt.Episode{}
@@ -61,7 +62,7 @@ func (c *Client) Translations(
 // Comments Returns all top level comments for an episode. By default, the newest comments are returned first.
 // Other sorting options include oldest, most likes, most replies, highest rated, lowest rated, and most plays.
 //
-// - Pagination
+//  - Pagination
 func Comments(id trakt.SearchID, season, episode int64, params *trakt.CommentListParams) *trakt.CommentIterator {
 	return getC().Comments(id, season, episode, params)
 }
@@ -69,7 +70,7 @@ func Comments(id trakt.SearchID, season, episode int64, params *trakt.CommentLis
 // Comments Returns all top level comments for an episode. By default, the newest comments are returned first.
 // Other sorting options include oldest, most likes, most replies, highest rated, lowest rated, and most plays.
 //
-// - Pagination
+//  - Pagination
 func (c *Client) Comments(
 	id trakt.SearchID,
 	season, episode int64,
@@ -86,7 +87,7 @@ func (c *Client) Comments(
 // Lists returns all lists that contain this episode. By default, personal lists are returned
 // sorted by the most popular.
 //
-// - Pagination
+//  - Pagination
 func Lists(id trakt.SearchID, season, episode int64, params *trakt.GetListParams) *trakt.ListIterator {
 	return getC().Lists(id, season, episode, params)
 }
@@ -94,7 +95,7 @@ func Lists(id trakt.SearchID, season, episode int64, params *trakt.GetListParams
 // Lists returns all lists that contain this episode. By default, personal lists are returned
 // sorted by the most popular.
 //
-// - Pagination
+//  - Pagination
 func (c *Client) Lists(id trakt.SearchID, season, episode int64, params *trakt.GetListParams) *trakt.ListIterator {
 	path := trakt.FormatURLPath(
 		"/shows/%s/seasons/%s/episodes/%s/lists/%s/%s",
@@ -116,7 +117,7 @@ func (c *Client) Lists(id trakt.SearchID, season, episode int64, params *trakt.G
 //
 // Note: This returns a lot of data, so please only use this extended parameter if you actually need it!
 //
-// - Extended Info
+//  - Extended Info
 func People(id trakt.SearchID, season, episode int64, params *trakt.ExtendedParams) (*trakt.CastAndCrew, error) {
 	return getC().People(id, season, episode, params)
 }
@@ -134,7 +135,7 @@ func People(id trakt.SearchID, season, episode int64, params *trakt.ExtendedPara
 //
 // Note: This returns a lot of data, so please only use this extended parameter if you actually need it!
 //
-// - Extended Info
+//  - Extended Info
 func (c *Client) People(
 	id trakt.SearchID,
 	season, episode int64,
@@ -185,14 +186,14 @@ func (c *Client) Statistics(
 
 // WatchingNow returns all users watching this episode right now.
 //
-// - Extended Info
+//  - Extended Info
 func WatchingNow(id trakt.SearchID, season, episode int64, params *trakt.BasicListParams) *trakt.UserIterator {
 	return getC().WatchingNow(id, season, episode, params)
 }
 
 // WatchingNow returns all users watching this episode right now.
 //
-// - Extended Info
+//  - Extended Info
 func (c *Client) WatchingNow(
 	id trakt.SearchID,
 	season, episode int64,

@@ -7,8 +7,8 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-// Client the language client.
-type Client struct{ b trakt.BaseClient }
+// client the language client.
+type client struct{ b trakt.BaseClient }
 
 // List retrieves a list of all languages, including names and codes.
 func List(params *trakt.ListByTypeParams) *trakt.LanguageIterator {
@@ -16,7 +16,7 @@ func List(params *trakt.ListByTypeParams) *trakt.LanguageIterator {
 }
 
 // List retrieves a list of all languages, including names and codes.
-func (c *Client) List(params *trakt.ListByTypeParams) *trakt.LanguageIterator {
+func (c *client) List(params *trakt.ListByTypeParams) *trakt.LanguageIterator {
 	path := trakt.FormatURLPath("/languages/%s", params.Type)
 	return &trakt.LanguageIterator{
 		BasicIterator: c.b.NewSimulatedIteratorWithCondition(http.MethodGet, path, params, func() error {
@@ -36,4 +36,4 @@ func (c *Client) List(params *trakt.ListByTypeParams) *trakt.LanguageIterator {
 }
 
 // getC retrieves an instance of a language client.
-func getC() *Client { return &Client{trakt.NewClient()} }
+func getC() *client { return &client{trakt.NewClient()} }
