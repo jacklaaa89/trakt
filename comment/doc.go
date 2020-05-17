@@ -10,15 +10,15 @@
 // - Correctly indicate if the comment contains spoilers.
 // - Only write comments in English - This is important!
 // - Do not include app specific text like (via App Name) or #apphashtag. This clutters up the comments and
-//   failure to clean the comment text could get your app blacklisted from commenting.
+// failure to clean the comment text could get your app blacklisted from commenting.
 //
-// Comment Formatting
+// Comment Formatting.
 //
 // Comments support markdown formatting so you'll want to render this in your app so it matches what the
 // website does. In addition, we support inline spoiler tags like [spoiler]text[/spoiler] which you should
 // also handle independent of the top level spoiler attribute.
 //
-// 😁 Emojis
+// 😁 Emojis.
 //
 // We use short codes for emojis like :smiley: and :raised_hands: and render them on the Trakt website using
 // EmojiOne. The Trakt API accepts standard unicode emojis, but we'll auto convert them to short codes

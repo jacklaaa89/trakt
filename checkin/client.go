@@ -1,4 +1,4 @@
-// Package checkin
+// Package checkin allows user to manually signal that they are watching a media item.
 //
 // Checking in is a manual action used by mobile apps allowing the user to indicate what
 // they are watching right now. While not as effortless as scrobbling, checkins help fill in the gaps.
