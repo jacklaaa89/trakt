@@ -38,17 +38,24 @@ type StartCheckinParams struct {
 	Sharing *SharingParams `json:"sharing,omitempty"`
 }
 
+// MarshalJSON implements Marshaller interface.
 func (s *StartCheckinParams) MarshalJSON() ([]byte, error) {
 	m := marshalToMap(s)
 	m[strings.ToLower(string(s.Type))] = s.Element
 	return json.Marshal(m)
 }
 
+// Checkin represents a manual checkin entry.
 type Checkin struct {
 	basePlaybackItem
+
+	// WatchedAt when the user started watching this item.
 	WatchedAt time.Time `json:"watched_at"`
 }
 
+// UnmarshalJSON implements Unmarshaller interface.
+// allows us to determine the type of entry it is
+// from the data retrieved.
 func (c *Checkin) UnmarshalJSON(bytes []byte) error {
 	type A Checkin
 	var a = new(A)
