@@ -65,19 +65,67 @@ func (c *client) Playbacks(params *trakt.ListPlaybackParams) *trakt.PlaybackIter
 	return &trakt.PlaybackIterator{BasicIterator: c.b.NewSimulatedIterator(http.MethodGet, path, params)}
 }
 
+// RemovePlaybacks removes a playback item from a user's playback progress list.
+// an error with the code "ErrorCodeNotFound" will be returned if the playback was not found.
+//
+//  - OAuth Required
 func RemovePlayback(id int64, params *trakt.RemovePlaybackParams) error {
 	return getC().RemovePlayback(id, params)
 }
 
+// RemovePlaybacks removes a playback item from a user's playback progress list.
+// an error with the code "ErrorCodeNotFound" will be returned if the playback was not found.
+//
+//  - OAuth Required
 func (c *client) RemovePlayback(id int64, params *trakt.RemovePlaybackParams) error {
 	path := trakt.FormatURLPath("/sync/playback/%s", params.Type)
 	return c.b.Call(http.MethodDelete, path, params, nil)
 }
 
+// Collection returns all collected items in a user's collection. A collected item indicates availability to watch
+// digitally or on physical media.
+//
+// Each movie object contains CollectedAt and UpdatedAt times. Since users can set custom dates when they
+// collected movies, it is possible for CollectedAt to be in the past. We also include UpdatedAt to help
+// sync Trakt data with your app. Cache this timestamp locally and only re-process the movie if
+// you see a newer timestamp.
+//
+// Each show object contains LastCollected and LastUpdated times. Since users can set custom dates when they
+// collected episodes, it is possible for LastCollected to be in the past. We also include LastUpdated to help
+// sync Trakt data with your app. Cache this timestamp locally and only re-process the show if you see a
+// newer timestamp.
+//
+// Metadata
+//
+// If you set Extended to "ExtendedTypeMetadata", it will return the additional metadata. It will be nil if the
+// metadata isn't set for an item.
+//
+//  - OAuth Required
+//  - Extended Info
 func Collection(params *trakt.ListCollectionParams) trakt.CollectionIterator {
 	return getC().Collection(params)
 }
 
+// Collection returns all collected items in a user's collection. A collected item indicates availability to watch
+// digitally or on physical media.
+//
+// Each movie object contains CollectedAt and UpdatedAt times. Since users can set custom dates when they
+// collected movies, it is possible for CollectedAt to be in the past. We also include UpdatedAt to help
+// sync Trakt data with your app. Cache this timestamp locally and only re-process the movie if
+// you see a newer timestamp.
+//
+// Each show object contains LastCollected and LastUpdated times. Since users can set custom dates when they
+// collected episodes, it is possible for LastCollected to be in the past. We also include LastUpdated to help
+// sync Trakt data with your app. Cache this timestamp locally and only re-process the show if you see a
+// newer timestamp.
+//
+// Metadata
+//
+// If you set Extended to "ExtendedTypeMetadata", it will return the additional metadata. It will be nil if the
+// metadata isn't set for an item.
+//
+//  - OAuth Required
+//  - Extended Info
 func (c *client) Collection(params *trakt.ListCollectionParams) trakt.CollectionIterator {
 	if params.Type == trakt.TypeMovie {
 		return c.movieCollection(params)
@@ -86,30 +134,84 @@ func (c *client) Collection(params *trakt.ListCollectionParams) trakt.Collection
 	return c.showCollection(params)
 }
 
+// AddToCollection adds items to a user's collection. Accepts shows, seasons, episodes and movies. If only a show
+// is passed, all episodes for the show will be collected. If seasons are specified, all episodes in those seasons
+// will be collected.
+//
+// Set CollectedAt on any media entry to mark items as collected in the past. You can also send additional
+// metadata about the media itself to have a very accurate collection. Showcase what is available to watch
+// from your epic HD DVD collection down to your downloaded iTunes movies.
+//
+// Note: You can resend items already in your collection and they will be updated with any new values.
+// This includes the CollectedAt value and any other metadata.
+//
+//  - OAuth Required
 func AddToCollection(params *trakt.AddToCollectionParams) (*trakt.AddToCollectionResult, error) {
 	return getC().AddToCollection(params)
 }
 
+// AddToCollection adds items to a user's collection. Accepts shows, seasons, episodes and movies. If only a show
+// is passed, all episodes for the show will be collected. If seasons are specified, all episodes in those seasons
+// will be collected.
+//
+// Set CollectedAt on any media entry to mark items as collected in the past. You can also send additional
+// metadata about the media itself to have a very accurate collection. Showcase what is available to watch
+// from your epic HD DVD collection down to your downloaded iTunes movies.
+//
+// Note: You can resend items already in your collection and they will be updated with any new values.
+// This includes the CollectedAt value and any other metadata.
+//
+//  - OAuth Required
 func (c *client) AddToCollection(params *trakt.AddToCollectionParams) (*trakt.AddToCollectionResult, error) {
 	rcv := &trakt.AddToCollectionResult{}
 	err := c.b.Call(http.MethodPost, "/sync/collection", params, &rcv)
 	return rcv, err
 }
 
+// RemoveFromCollection removes one or more items from a user's collection.
+//
+//  - OAuth Required
 func RemoveFromCollection(params *trakt.RemoveFromCollectionParams) (*trakt.RemoveFromCollectionResult, error) {
 	return getC().RemoveFromCollection(params)
 }
 
+// RemoveFromCollection removes one or more items from a user's collection.
+//
+//  - OAuth Required
 func (c *client) RemoveFromCollection(params *trakt.RemoveFromCollectionParams) (*trakt.RemoveFromCollectionResult, error) {
 	rcv := &trakt.RemoveFromCollectionResult{}
 	err := c.b.Call(http.MethodPost, "/sync/collection/remove", params, &rcv)
 	return rcv, err
 }
 
-func Watched(params *trakt.ListCollectionParams) trakt.WatchedIterator {
-	return getC().Watched(params)
-}
+// Watched returns all movies or shows a user has watched sorted by most plays. If type is set to shows
+// and you set Extended to "ExtendedTypeNoSeasons" it won't return season or episode info.
+//
+// Each movie and show object contains LastWatched and LastUpdated times. Since users can set custom dates
+// when they watched movies and episodes, it is possible for LastWatched to be in the past. We also include
+// LastUpdated to help sync Trakt data with your app. Cache this timestamp locally and only re-process
+// the movies and shows if you see a newer timestamp.
+//
+// Each show object contains a ResetAt timestamp. If not null, this is when the user started re-watching the show.
+// Your app can adjust the progress by ignoring episodes with a LastWatched prior to the ResetAt.
+//
+//  - OAuth Required
+//  - Extended Info
+func Watched(params *trakt.ListCollectionParams) trakt.WatchedIterator { return getC().Watched(params) }
 
+// Watched returns all movies or shows a user has watched sorted by most plays. If type is set to shows
+// and you set Extended to "ExtendedTypeNoSeasons" it won't return season or episode info.
+//
+// Each movie and show object contains LastWatched and LastUpdated times. Since users can set custom dates
+// when they watched movies and episodes, it is possible for LastWatched to be in the past. We also include
+// LastUpdated to help sync Trakt data with your app. Cache this timestamp locally and only re-process
+// the movies and shows if you see a newer timestamp.
+//
+// Each show object contains a ResetAt timestamp. If not null, this is when the user started re-watching the show.
+// Your app can adjust the progress by ignoring episodes with a LastWatched prior to the ResetAt.
+//
+//  - OAuth Required
+//  - Extended Info
 func (c *client) Watched(params *trakt.ListCollectionParams) trakt.WatchedIterator {
 	if params.Type == trakt.TypeMovie {
 		return c.watchedMovies(params)
@@ -118,87 +220,209 @@ func (c *client) Watched(params *trakt.ListCollectionParams) trakt.WatchedIterat
 	return c.watchedShows(params)
 }
 
+// History returns movies and episodes that a user has watched, sorted by most recent. You can optionally limit
+// the type to movies or episodes. The id (64-bit integer) in each history item uniquely identifies the
+// event and can be used to remove individual events by using the RemoveFromHistory method. The action will be set to
+// scrobble, checkin, or watch.
+//
+// Specify a type and trakt id to limit the history for just that item. If the id is valid, but there is no history,
+// an empty array will be returned.
+//
+//  - OAuth Required
+//  - Pagination
+//  - Extended Info
 func History(params *trakt.ListHistoryParams) *trakt.HistoryIterator {
 	return getC().History(params)
 }
 
+// History returns movies and episodes that a user has watched, sorted by most recent. You can optionally limit
+// the type to movies or episodes. The id (64-bit integer) in each history item uniquely identifies the
+// event and can be used to remove individual events by using the RemoveFromHistory method. The action will be set to
+// scrobble, checkin, or watch.
+//
+// Specify a type and trakt id to limit the history for just that item. If the id is valid, but there is no history,
+// an empty array will be returned.
+//
+//  - OAuth Required
+//  - Pagination
+//  - Extended Info
 func (c *client) History(params *trakt.ListHistoryParams) *trakt.HistoryIterator {
 	path := trakt.FormatURLPath("/sync/history/%s/%s", params.Type, params.ID)
 	return &trakt.HistoryIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
+// AddToHistory adds items to a user's watch history. Accepts shows, seasons, episodes and movies.
+// If only a show is passed, all episodes for the show will be added. If seasons are specified, only episodes
+// in those seasons will be added.
+//
+// Supply WatchedAt to mark items as watched in the past. This is useful for syncing past
+// watches from a media center.
+//
+//  - OAuth Required
 func AddToHistory(params *trakt.AddToHistoryParams) (*trakt.AddToHistoryResult, error) {
 	return getC().AddToHistory(params)
 }
 
+// AddToHistory adds items to a user's watch history. Accepts shows, seasons, episodes and movies.
+// If only a show is passed, all episodes for the show will be added. If seasons are specified, only episodes
+// in those seasons will be added.
+//
+// Supply WatchedAt to mark items as watched in the past. This is useful for syncing past
+// watches from a media center.
+//
+//  - OAuth Required
 func (c *client) AddToHistory(params *trakt.AddToHistoryParams) (*trakt.AddToHistoryResult, error) {
 	rcv := &trakt.AddToHistoryResult{}
 	err := c.b.Call(http.MethodPost, "/sync/history", params, &rcv)
 	return rcv, err
 }
 
+// RemoveFromHistory removes items from a user's watch history including all watches, scrobbles, and checkins.
+// Accepts shows, seasons, episodes and movies. If only a show is passed, all episodes for the show will be removed.
+// If seasons are specified, only episodes in those seasons will be removed.
+//
+// You can also send a list of raw history ids (64-bit integers) to delete single plays from the watched history.
+// The "History" method will return an individual id (64-bit integer) for each history item.
+//
+//  - OAuth Required
 func RemoveFromHistory(params *trakt.RemoveFromHistoryParams) (*trakt.RemoveFromHistoryResult, error) {
 	return getC().RemoveFromHistory(params)
 }
 
+// RemoveFromHistory removes items from a user's watch history including all watches, scrobbles, and checkins.
+// Accepts shows, seasons, episodes and movies. If only a show is passed, all episodes for the show will be removed.
+// If seasons are specified, only episodes in those seasons will be removed.
+//
+// You can also send a list of raw history ids (64-bit integers) to delete single plays from the watched history.
+// The "History" method will return an individual id (64-bit integer) for each history item.
+//
+//  - OAuth Required
 func (c *client) RemoveFromHistory(params *trakt.RemoveFromHistoryParams) (*trakt.RemoveFromHistoryResult, error) {
 	rcv := &trakt.RemoveFromHistoryResult{}
 	err := c.b.Call(http.MethodPost, "/sync/history/remove", params, &rcv)
 	return rcv, err
 }
 
+// Ratings returns a user's ratings filtered by type. You can optionally filter for a specific rating
+// between 1 and 10. Send a comma separated string for rating if you need multiple ratings.
+//
+//  - OAuth Required
+//  - Pagination
+//  - Extended Info
 func Ratings(params *trakt.ListRatingParams) *trakt.RatingIterator {
 	return getC().Ratings(params)
 }
 
+// Ratings returns a user's ratings filtered by type. You can optionally filter for a specific rating
+// between 1 and 10. Send a comma separated string for rating if you need multiple ratings.
+//
+//  - OAuth Required
+//  - Pagination
+//  - Extended Info
 func (c *client) Ratings(params *trakt.ListRatingParams) *trakt.RatingIterator {
 	path := trakt.FormatURLPath("/sync/ratings/%s/%s", params.Type.Plural(), params.Ratings)
 	return &trakt.RatingIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
+// AddRatings rates one or more items. Accepts shows, seasons, episodes and movies. If only a show is passed,
+// only the show itself will be rated. If seasons are specified, all of those seasons will be rated.
+// Send a RatedAt time to mark items as rated in the past. This is useful for syncing ratings from a media center.
+//
+//  - OAuth Required
 func AddRatings(params *trakt.AddRatingsParams) (*trakt.AddRatingsResult, error) {
 	return getC().AddRatings(params)
 }
 
+// AddRatings rates one or more items. Accepts shows, seasons, episodes and movies. If only a show is passed,
+// only the show itself will be rated. If seasons are specified, all of those seasons will be rated.
+// Send a RatedAt time to mark items as rated in the past. This is useful for syncing ratings from a media center.
+//
+//  - OAuth Required
 func (c *client) AddRatings(params *trakt.AddRatingsParams) (*trakt.AddRatingsResult, error) {
 	rcv := &trakt.AddRatingsResult{}
 	err := c.b.Call(http.MethodPost, "/sync/ratings", params, &rcv)
 	return rcv, err
 }
 
+// RemoveRatings removes ratings for one or more items.
+//
+//  - OAuth Required
 func RemoveRatings(params *trakt.RemoveRatingsParams) (*trakt.RemoveRatingsResult, error) {
 	return getC().RemoveRatings(params)
 }
 
+// RemoveRatings removes ratings for one or more items.
+//
+//  - OAuth Required
 func (c *client) RemoveRatings(params *trakt.RemoveRatingsParams) (*trakt.RemoveRatingsResult, error) {
 	rcv := &trakt.RemoveRatingsResult{}
 	err := c.b.Call(http.MethodPost, "/sync/ratings/remove", params, &rcv)
 	return rcv, err
 }
 
+// WatchList returns all items in a user's watchlist filtered by type.
+//
+// Sorting
+//
+// By default, all list items are sorted by rank asc. You can call the "Applied" function on the iterator to
+// indicate how the results are actually being sorted.
+// You can call the "Preferred" function on the iterator to retrieve the user's sort preference. Use these to
+// perform a custom sort on the watchlist in your app for more advanced sort abilities we can't do in the API.
+//
+//  - OAuth Required
+//  - Pagination
+//  - Extended Info
 func WatchList(params *trakt.ListWatchListParams) *trakt.WatchListEntryIterator {
 	return getC().WatchList(params)
 }
 
+// WatchList returns all items in a user's watchlist filtered by type.
+//
+// Sorting
+//
+// By default, all list items are sorted by rank asc. You can call the "Applied" function on the iterator to
+// indicate how the results are actually being sorted.
+// You can call the "Preferred" function on the iterator to retrieve the user's sort preference. Use these to
+// perform a custom sort on the watchlist in your app for more advanced sort abilities we can't do in the API.
+//
+//  - OAuth Required
+//  - Pagination
+//  - Extended Info
 func (c *client) WatchList(params *trakt.ListWatchListParams) *trakt.WatchListEntryIterator {
 	path := trakt.FormatURLPath("/sync/watchlist/%s/%s", params.Type.Plural(), params.Sort)
 	return &trakt.WatchListEntryIterator{Iterator: c.b.NewIterator(http.MethodGet, path, params)}
 }
 
+// AddToWatchList adds one of more items to a user's watchlist. Accepts shows, seasons, episodes and movies.
+// If only a show is passed, only the show itself will be added. If seasons are specified, all of those
+// seasons will be added.
+//
+//  - OAuth Required
 func AddToWatchList(params *trakt.AddToWatchListParams) (*trakt.AddToWatchListResult, error) {
 	return getC().AddToWatchList(params)
 }
 
+// AddToWatchList adds one of more items to a user's watchlist. Accepts shows, seasons, episodes and movies.
+// If only a show is passed, only the show itself will be added. If seasons are specified, all of those
+// seasons will be added.
+//
+//  - OAuth Required
 func (c *client) AddToWatchList(params *trakt.AddToWatchListParams) (*trakt.AddToWatchListResult, error) {
 	rcv := &trakt.AddToWatchListResult{}
 	err := c.b.Call(http.MethodPost, "/sync/watchlist", params, &rcv)
 	return rcv, err
 }
 
+// RemoveFromWatchList removes one or more items from a user's watchlist.
+//
+//  - OAuth Required
 func RemoveFromWatchList(params *trakt.RemoveFromWatchListParams) (*trakt.RemoveFromWatchListResult, error) {
 	return getC().RemoveFromWatchList(params)
 }
 
+// RemoveFromWatchList removes one or more items from a user's watchlist.
+//
+//  - OAuth Required
 func (c *client) RemoveFromWatchList(params *trakt.RemoveFromWatchListParams) (*trakt.RemoveFromWatchListResult, error) {
 	rcv := &trakt.RemoveFromWatchListResult{}
 	err := c.b.Call(http.MethodPost, "/sync/watchlist/remove", params, &rcv)
