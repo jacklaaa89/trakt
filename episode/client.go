@@ -7,9 +7,9 @@ import (
 	"github.com/jacklaaa89/trakt"
 )
 
-// Client is a representation of a episode client, capable of
+// client is a representation of a episode client, capable of
 // retrieving information on specific show episodes.
-type Client struct{ b trakt.BaseClient }
+type client struct{ b trakt.BaseClient }
 
 // Get returns a single episode's details. All date and times are in UTC and were calculated using the
 // episode's air_date and show's country and air_time.
@@ -27,7 +27,7 @@ func Get(id trakt.SearchID, season, episode int64, params *trakt.ExtendedParams)
 // Note: If the first_aired is unknown, it will be set to null.
 //
 //  - Extended Info
-func (c *Client) Get(id trakt.SearchID, season, episode int64, params *trakt.ExtendedParams) (*trakt.Episode, error) {
+func (c *client) Get(id trakt.SearchID, season, episode int64, params *trakt.ExtendedParams) (*trakt.Episode, error) {
 	path := trakt.FormatURLPath("/shows/%s/seasons/%s/episodes/%s", id, season, episode)
 	ep := &trakt.Episode{}
 	err := c.b.Call(http.MethodGet, path, params, ep)
@@ -47,7 +47,7 @@ func Translations(
 
 // Translations returns all translations for an episode, including language and translated
 // values for title and overview.
-func (c *Client) Translations(
+func (c *client) Translations(
 	id trakt.SearchID,
 	season, episode int64,
 	params *trakt.TranslationListParams,
@@ -71,7 +71,7 @@ func Comments(id trakt.SearchID, season, episode int64, params *trakt.CommentLis
 // Other sorting options include oldest, most likes, most replies, highest rated, lowest rated, and most plays.
 //
 //  - Pagination
-func (c *Client) Comments(
+func (c *client) Comments(
 	id trakt.SearchID,
 	season, episode int64,
 	params *trakt.CommentListParams,
@@ -96,7 +96,7 @@ func Lists(id trakt.SearchID, season, episode int64, params *trakt.GetListParams
 // sorted by the most popular.
 //
 //  - Pagination
-func (c *Client) Lists(id trakt.SearchID, season, episode int64, params *trakt.GetListParams) *trakt.ListIterator {
+func (c *client) Lists(id trakt.SearchID, season, episode int64, params *trakt.GetListParams) *trakt.ListIterator {
 	path := trakt.FormatURLPath(
 		"/shows/%s/seasons/%s/episodes/%s/lists/%s/%s",
 		id, season, episode, params.ListType, params.SortType,
@@ -113,6 +113,7 @@ func (c *Client) Lists(id trakt.SearchID, season, episode int64, params *trakt.G
 // members will have a jobs array and a standard person object.
 //
 // Guest Stars
+//
 // If you use the "ExtendedTypeGuestStars" extended type, it will return all guest stars that appeared in the episode.
 //
 // Note: This returns a lot of data, so please only use this extended parameter if you actually need it!
@@ -131,12 +132,13 @@ func People(id trakt.SearchID, season, episode int64, params *trakt.ExtendedPara
 // members will have a jobs array and a standard person object.
 //
 // Guest Stars
+//
 // If you use the "ExtendedTypeGuestStars" extended type, it will return all guest stars that appeared in the episode.
 //
 // Note: This returns a lot of data, so please only use this extended parameter if you actually need it!
 //
 //  - Extended Info
-func (c *Client) People(
+func (c *client) People(
 	id trakt.SearchID,
 	season, episode int64,
 	params *trakt.ExtendedParams,
@@ -154,7 +156,7 @@ func Ratings(id trakt.SearchID, season, episode int64, params *trakt.BasicParams
 }
 
 // Ratings returns the rating (between 0 and 10) and distribution for an episode.
-func (c *Client) Ratings(
+func (c *client) Ratings(
 	id trakt.SearchID,
 	season, episode int64,
 	params *trakt.BasicParams,
@@ -172,7 +174,7 @@ func Statistics(id trakt.SearchID, season, episode int64, params *trakt.BasicPar
 }
 
 // Statistics returns lots of episode stats.
-func (c *Client) Statistics(
+func (c *client) Statistics(
 	id trakt.SearchID,
 	season, episode int64,
 	params *trakt.BasicParams,
@@ -194,7 +196,7 @@ func WatchingNow(id trakt.SearchID, season, episode int64, params *trakt.BasicLi
 // WatchingNow returns all users watching this episode right now.
 //
 //  - Extended Info
-func (c *Client) WatchingNow(
+func (c *client) WatchingNow(
 	id trakt.SearchID,
 	season, episode int64,
 	params *trakt.BasicListParams,
@@ -205,4 +207,4 @@ func (c *Client) WatchingNow(
 }
 
 // getC initialises a new episode client with the current backend configuration.
-func getC() *Client { return &Client{trakt.NewClient()} }
+func getC() *client { return &client{trakt.NewClient()} }

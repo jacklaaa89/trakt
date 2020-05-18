@@ -278,6 +278,10 @@ func (s *backendImplementation) call(method, path, key string, params ParamsCont
 // callRaw executes a HTTP request to the trakt API by generating the path, body and executing the request and
 // unmarshalling the response into v.
 func (s *backendImplementation) callRaw(method, path, key string, params ParamsContainer, v, h interface{}) error {
+	rv := reflect.ValueOf(params)
+		params = &BasicParams{}
+	}
+
 	var body []byte
 	if isHTTPWriteMethod(method) {
 		var encodeErr error
@@ -334,19 +338,18 @@ func (s *backendImplementation) newRequest(method, path, key, contentType string
 
 	// add oauth token if supplied.
 	token := params.oauth()
+
 	if token != "" {
 		authorization := "Bearer " + token
 		req.Header.Add("Authorization", authorization)
 	}
 
-	if params != nil {
-		req = req.WithContext(params.context())
+	req = req.WithContext(params.context())
 
-		for k, v := range params.headers() {
-			for _, line := range v {
-				// Use Set to override the default value possibly set before
-				req.Header.Set(k, line)
-			}
+	for k, v := range params.headers() {
+		for _, line := range v {
+			// Use Set to override the default value possibly set before
+			req.Header.Set(k, line)
 		}
 	}
 
